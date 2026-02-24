@@ -36,7 +36,7 @@
 
 | # | Модуль | Ключевые темы | Статус |
 |---|--------|---------------|--------|
-| 10 | REST & GraphQL клиент | fetch, axios, React Query, Apollo Client, кэш, optimistic UI | ⏳ Планируется |
+| 10 | [REST & GraphQL клиент](./10-rest-graphql/README.md) | fetch, axios, TanStack Query v5, Apollo Client, нормализованный кеш, optimistic UI | ✅ Готов |
 | 11 | Web3.js | Ethereum, контракты, ABI, MetaMask, подписи, IPFS | ⏳ Планируется |
 
 ### Тестирование
