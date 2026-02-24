@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Specificity — визуальный разбор</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 800px; }
+    .demo { border: 1px solid #ccc; padding: 1rem; margin: 1.5rem 0; border-radius: 6px; }
+    .demo h2 { margin-top: 0; font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-size: 0.9rem; }
+    th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
+    th { background: #f5f5f5; }
+    .winner { background: #e6f4e6; font-weight: bold; }
+    code { background: #f5f5f5; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.9em; }
+
+    /* ============================================================
+       DEMO 1: Сравнение специфичностей
+       ============================================================ */
+    #demo1 p.text { color: purple; }    /* (1,1,1) */
+    .container .text { color: green; }  /* (0,2,0) */
+    p { color: red; }                   /* (0,0,1) */
+
+    /* ============================================================
+       DEMO 2: :is() берёт специфичность наибольшего аргумента
+       ============================================================ */
+    :is(#id, .class) p { color: red; }    /* (1,0,1) — из-за #id */
+    .class p { color: blue; }              /* (0,1,1) */
+    /* Первый победит, хотя элемент <p class="class"> не имеет ID родителя */
+
+    /* ============================================================
+       DEMO 3: :where() — нулевая специфичность
+       ============================================================ */
+    :where(#demo3 .btn) { background: red; color: white; padding: 0.3rem 0.8rem; }  /* (0,0,0) */
+    .btn-override { background: green; }                                               /* (0,1,0) */
+    /* .btn-override победит несмотря на то что :where() содержит ID */
+
+    /* ============================================================
+       DEMO 4: Inline style vs ID
+       ============================================================ */
+    #demo4-box { color: red; }  /* (1,0,0) */
+    /* Inline style: color: blue → победит, т.к. inline > любой селектор */
+
+    /* ============================================================
+       DEMO 5: :not() берёт специфичность аргумента
+       ============================================================ */
+    p:not(#special) { color: orange; } /* (1,0,1) — :not(#special) = (1,0,0) + p = (0,0,1) */
+    p.regular { color: green; }        /* (0,1,1) */
+    /* p:not(#special) победит */
+  </style>
+</head>
+<body>
+
+  <h1>Specificity — вычисление и ловушки</h1>
+
+  <div class="demo">
+    <h2>Demo 1: Базовое вычисление</h2>
+
+    <table>
+      <tr>
+        <th>Селектор</th>
+        <th>A (ID)</th>
+        <th>B (Class/Attr/Pseudo-class)</th>
+        <th>C (Element/Pseudo-el)</th>
+        <th>Итог</th>
+      </tr>
+      <tr class="winner">
+        <td><code>#demo1 p.text</code></td>
+        <td>1 (#demo1)</td>
+        <td>1 (.text)</td>
+        <td>1 (p)</td>
+        <td><strong>(1,1,1) ✅ победитель</strong></td>
+      </tr>
+      <tr>
+        <td><code>.container .text</code></td>
+        <td>0</td>
+        <td>2 (.container + .text)</td>
+        <td>0</td>
+        <td>(0,2,0)</td>
+      </tr>
+      <tr>
+        <td><code>p</code></td>
+        <td>0</td>
+        <td>0</td>
+        <td>1 (p)</td>
+        <td>(0,0,1)</td>
+      </tr>
+    </table>
+
+    <div id="demo1">
+      <p class="text">Фиолетовый: победил #demo1 p.text → (1,1,1)</p>
+    </div>
+  </div>
+
+  <div class="demo">
+    <h2>Demo 2: :is() «заражает» специфичностью наибольшего аргумента</h2>
+    <table>
+      <tr><th>Селектор</th><th>Специфичность</th><th>Примечание</th></tr>
+      <tr class="winner">
+        <td><code>:is(#id, .class) p</code></td>
+        <td>(1,0,1)</td>
+        <td>:is() берёт (1,0,0) из #id + p = (0,0,1)</td>
+      </tr>
+      <tr>
+        <td><code>.class p</code></td>
+        <td>(0,1,1)</td>
+        <td>Ожидаемо</td>
+      </tr>
+    </table>
+    <p>⚠️ <code>:is(#id, .class) p</code> имеет специфичность (1,0,1) даже для элементов без #id родителя.</p>
+  </div>
+
+  <div class="demo">
+    <h2>Demo 3: :where() — нулевая специфичность (легко переопределить)</h2>
+
+    <div id="demo3">
+      <!--
+        :where(#demo3 .btn) = (0,0,0) — несмотря на #demo3 внутри!
+        .btn-override = (0,1,0) — победит с любой специфичностью
+      -->
+      <button class="btn">Красная (из :where)</button>
+      <button class="btn btn-override">Зелёная (.btn-override победил :where)</button>
+    </div>
+
+    <table>
+      <tr><th>Селектор</th><th>Специфичность</th></tr>
+      <tr>
+        <td><code>:where(#demo3 .btn)</code></td>
+        <td>(0,0,0) — :where обнуляет</td>
+      </tr>
+      <tr class="winner">
+        <td><code>.btn-override</code></td>
+        <td>(0,1,0) — победитель</td>
+      </tr>
+    </table>
+    <p><strong>Применение:</strong> библиотеки и reset-стили через <code>:where()</code> — пользователь легко переопределит с минимальной специфичностью.</p>
+  </div>
+
+  <div class="demo">
+    <h2>Demo 4: Inline style vs ID селектор</h2>
+
+    <!--
+      #demo4-box { color: red } → (1,0,0)
+      style="color: blue" → «inline» уровень (выше любого селектора, ниже !important)
+    -->
+    <div id="demo4-box" style="color: blue;">
+      Синий текст: inline style победил #demo4-box { color: red }
+    </div>
+    <p>Hierarchy: <code>!important</code> > <code>style=""</code> > <code>#id</code> > <code>.class</code> > <code>element</code></p>
+  </div>
+
+  <div class="demo">
+    <h2>Demo 5: :not() берёт специфичность своего аргумента</h2>
+
+    <table>
+      <tr><th>Селектор</th><th>Специфичность</th><th>Расчёт</th></tr>
+      <tr class="winner">
+        <td><code>p:not(#special)</code></td>
+        <td>(1,0,1)</td>
+        <td>p=(0,0,1) + :not(#special)→(1,0,0) = (1,0,1)</td>
+      </tr>
+      <tr>
+        <td><code>p.regular</code></td>
+        <td>(0,1,1)</td>
+        <td>p=(0,0,1) + .regular=(0,1,0)</td>
+      </tr>
+    </table>
+
+    <p class="regular">Оранжевый: p:not(#special) победил, несмотря на то что этот &lt;p&gt; не является #special</p>
+    <p id="special" class="regular">Это #special — тоже оранжевый, т.к. p:not(#special) не совпадает, применяется p.regular</p>
+  </div>
+
+  <!--
+    ШПАРГАЛКА:
+    (0,0,0) — *, :where()
+    (0,0,1) — div, p, span, li, ::before, ::after
+    (0,1,0) — .class, [attr], :hover, :focus, :nth-child(), :not(element)
+    (0,1,1) — div.class, p:hover
+    (0,2,0) — .parent .child
+    (1,0,0) — #id, :not(#id)
+    inline  — style="" атрибут
+    !important — отдельный уровень каскада
+
+    Сравнение: (1,0,0) > (0,99,99) — A всегда важнее B и C
+  -->
+
+</body>
+</html>

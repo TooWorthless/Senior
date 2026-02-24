@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSS Grid — ключевые концепции</title>
+  <style>
+    body { font-family: sans-serif; padding: 1.5rem; max-width: 1000px; }
+    .demo { border: 1px solid #ccc; padding: 1rem; margin: 2rem 0; border-radius: 6px; }
+    .demo > h2 { margin-top: 0; font-size: 1rem; }
+    .item {
+      background: #0066cc;
+      color: white;
+      padding: 0.5rem;
+      font-size: 0.8rem;
+      text-align: center;
+      border-radius: 3px;
+    }
+    .item:nth-child(2n) { background: #cc6600; }
+    .item:nth-child(3n) { background: #006600; }
+
+    /* ============================================================
+       DEMO 1: Explicit vs Implicit grid
+       ============================================================ */
+    #demo1 .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: 80px 80px; /* только 2 explicit строки */
+      grid-auto-rows: minmax(60px, auto); /* implicit строки */
+      gap: 0.5rem;
+      background: #f0f8ff;
+      padding: 0.5rem;
+    }
+    /* Items 7-9 попадут в implicit rows */
+
+    /* ============================================================
+       DEMO 2: auto-fill vs auto-fit
+       ============================================================ */
+    #demo2 .fill-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.5rem;
+      background: #f0f8ff;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    #demo2 .fit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.5rem;
+      background: #fff0f0;
+      padding: 0.5rem;
+    }
+
+    /* ============================================================
+       DEMO 3: fr vs minmax(0, 1fr)
+       ============================================================ */
+    #demo3 .fr-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* может переполниться */
+      gap: 0.5rem;
+      background: #f0f8ff;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    #demo3 .fr0-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr)); /* строго равные */
+      gap: 0.5rem;
+      background: #f0fff0;
+      padding: 0.5rem;
+    }
+    .overflow-item {
+      background: #0066cc;
+      color: white;
+      padding: 0.5rem;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ============================================================
+       DEMO 4: Named Areas — page layout
+       ============================================================ */
+    #demo4 .page {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      grid-template-rows: 60px 1fr 50px;
+      grid-template-areas:
+        "header  header"
+        "sidebar content"
+        "footer  footer";
+      gap: 0.5rem;
+      height: 300px;
+      background: #f0f0f0;
+      padding: 0.5rem;
+    }
+    .g-header  { grid-area: header;  background: #0066cc; color: white; }
+    .g-sidebar { grid-area: sidebar; background: #cc6600; color: white; }
+    .g-content { grid-area: content; background: #006600; color: white; }
+    .g-footer  { grid-area: footer;  background: #660066; color: white; }
+    .g-header, .g-sidebar, .g-content, .g-footer {
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 3px; font-size: 0.9rem;
+    }
+
+    /* ============================================================
+       DEMO 5: Subgrid — выравнивание карточек
+       ============================================================ */
+    #demo5 .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    #demo5 .card {
+      display: grid;
+      /* Subgrid: использовать строки карточки для выравнивания содержимого */
+      grid-template-rows: auto 1fr auto;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    #demo5 .card-image {
+      background: #0066cc;
+      height: 120px;
+    }
+    #demo5 .card-body {
+      padding: 0.75rem;
+      font-size: 0.85rem;
+    }
+    #demo5 .card-footer {
+      padding: 0.75rem;
+      border-top: 1px solid #eee;
+    }
+    #demo5 .card-footer button {
+      width: 100%;
+      padding: 0.5rem;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>CSS Grid — концепции</h1>
+
+  <!-- DEMO 1: Explicit vs Implicit -->
+  <div class="demo" id="demo1">
+    <h2>Demo 1: Explicit (синие, 2 строки) vs Implicit (оранжевые, 3-я строка)</h2>
+    <div class="grid">
+      <div class="item">1 explicit</div>
+      <div class="item">2 explicit</div>
+      <div class="item">3 explicit</div>
+      <div class="item">4 explicit</div>
+      <div class="item">5 explicit</div>
+      <div class="item">6 explicit</div>
+      <div class="item">7 implicit ←</div>
+      <div class="item">8 implicit</div>
+      <div class="item">9 implicit</div>
+    </div>
+    <p style="font-size:0.85rem;color:#555;">
+      <code>grid-template-rows: 80px 80px</code> — 2 explicit строки по 80px.<br>
+      Items 7-9 → implicit строки: <code>grid-auto-rows: minmax(60px, auto)</code>
+    </p>
+  </div>
+
+  <!-- DEMO 2: auto-fill vs auto-fit -->
+  <div class="demo" id="demo2">
+    <h2>Demo 2: auto-fill vs auto-fit (уменьши окно для эффекта)</h2>
+    <p style="font-size:0.85rem;color:#555;"><strong>auto-fill</strong> (синий фон): пустые колонки сохраняются</p>
+    <div class="fill-grid">
+      <div class="item">1</div>
+      <div class="item">2</div>
+      <div class="item">3</div>
+    </div>
+    <p style="font-size:0.85rem;color:#555;"><strong>auto-fit</strong> (красный фон): items растягиваются, пустых нет</p>
+    <div class="fit-grid">
+      <div class="item">1</div>
+      <div class="item">2</div>
+      <div class="item">3</div>
+    </div>
+  </div>
+
+  <!-- DEMO 3: fr vs minmax(0, 1fr) -->
+  <div class="demo" id="demo3">
+    <h2>Demo 3: 1fr vs minmax(0, 1fr) — длинное слово</h2>
+    <p style="font-size:0.85rem;color:#555;"><strong>repeat(3, 1fr)</strong>: длинное слово раздвигает колонку</p>
+    <div class="fr-grid">
+      <div class="overflow-item">1fr — обычный</div>
+      <div class="overflow-item">ОЧЕНЬДЛИННОЕСЛОВОКОТОРОЕЛОМАЕТЛЕЙАУТ</div>
+      <div class="overflow-item">1fr — обычный</div>
+    </div>
+    <p style="font-size:0.85rem;color:#555;"><strong>repeat(3, minmax(0, 1fr))</strong>: текст обрезается, колонки равные</p>
+    <div class="fr0-grid">
+      <div class="overflow-item">minmax(0,1fr)</div>
+      <div class="overflow-item">ОЧЕНЬДЛИННОЕСЛОВОКОТОРОЕБОЛЬШЕНЕВЛОМАЕТ</div>
+      <div class="overflow-item">minmax(0,1fr)</div>
+    </div>
+  </div>
+
+  <!-- DEMO 4: Named Areas -->
+  <div class="demo" id="demo4">
+    <h2>Demo 4: Named Areas — page layout</h2>
+    <div class="page">
+      <div class="g-header">header</div>
+      <div class="g-sidebar">sidebar</div>
+      <div class="g-content">content</div>
+      <div class="g-footer">footer</div>
+    </div>
+    <pre style="font-size:0.8rem;background:#f5f5f5;padding:0.5rem;border-radius:4px;">grid-template-areas:
+  "header  header"
+  "sidebar content"
+  "footer  footer";</pre>
+  </div>
+
+  <!-- DEMO 5: Subgrid (cards) -->
+  <div class="demo" id="demo5">
+    <h2>Demo 5: grid-template-rows: auto 1fr auto — выравнивание кнопок</h2>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-image"></div>
+        <div class="card-body">
+          <h3 style="margin:0 0 0.5rem;">Короткий заголовок</h3>
+          <p style="margin:0;font-size:0.85rem;">Немного текста.</p>
+        </div>
+        <div class="card-footer">
+          <button>Купить</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-image" style="background:#cc6600;"></div>
+        <div class="card-body">
+          <h3 style="margin:0 0 0.5rem;">Очень длинный заголовок который занимает несколько строк</h3>
+          <p style="margin:0;font-size:0.85rem;">Подробное описание товара на несколько строк с дополнительной информацией.</p>
+        </div>
+        <div class="card-footer">
+          <button>Купить</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-image" style="background:#006600;"></div>
+        <div class="card-body">
+          <h3 style="margin:0 0 0.5rem;">Средний заголовок</h3>
+          <p style="margin:0;font-size:0.85rem;">Средняя длина описания.</p>
+        </div>
+        <div class="card-footer">
+          <button>Купить</button>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:#555;margin-top:1rem;">
+      <code>grid-template-rows: auto 1fr auto</code> — кнопки всегда внизу карточки.<br>
+      Для межкарточного выравнивания кнопок — нужен <code>subgrid</code> на родительской сетке.
+    </p>
+  </div>
+
+</body>
+</html>

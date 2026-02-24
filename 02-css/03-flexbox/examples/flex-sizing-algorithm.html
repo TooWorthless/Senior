@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Flex sizing algorithm</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 900px; }
+    .demo { border: 1px solid #ccc; padding: 1rem; margin: 2rem 0; border-radius: 6px; }
+    .demo > h2 { margin-top: 0; font-size: 1rem; }
+
+    .flex-container {
+      display: flex;
+      background: #f0f0f0;
+      padding: 0.5rem;
+      gap: 4px;
+      width: 600px; /* фиксированная ширина для наглядности */
+    }
+    .item {
+      padding: 0.5rem;
+      color: white;
+      font-size: 0.8rem;
+      text-align: center;
+      min-width: 0; /* позволяем сжиматься */
+    }
+    .a { background: #0066cc; }
+    .b { background: #cc6600; }
+    .c { background: #006600; }
+
+    /* ============================================================
+       DEMO 1: flex-grow — распределение свободного места
+       ============================================================ */
+    #demo1 .a { flex-basis: 100px; flex-grow: 1; flex-shrink: 0; }
+    #demo1 .b { flex-basis: 100px; flex-grow: 2; flex-shrink: 0; }
+    #demo1 .c { flex-basis: 100px; flex-grow: 0; flex-shrink: 0; }
+    /*
+      Контейнер: 600px, gap 8px (2 gaps)
+      Базовый размер: 300px + 8px = 308px
+      Свободное: 600 - 308 = 292px (≈)
+      Единица: 292 / (1+2+0) = 97px
+      A = 100 + 97 = 197px
+      B = 100 + 194 = 294px
+      C = 100 + 0 = 100px
+    */
+
+    /* ============================================================
+       DEMO 2: flex-shrink — взвешенное сжатие
+       ============================================================ */
+    #demo2 .flex-container { width: 300px; }
+    #demo2 .a { flex-basis: 200px; flex-grow: 0; flex-shrink: 1; }
+    #demo2 .b { flex-basis: 200px; flex-grow: 0; flex-shrink: 2; }
+    #demo2 .c { flex-basis: 200px; flex-grow: 0; flex-shrink: 0; }
+    /*
+      Контейнер: 300px, gap 8px
+      Базис: 600 + 8 = 608px
+      Нехватка = 608 - 300 = 308px
+
+      Веса shrink: A = 200*1=200, B = 200*2=400, C = 200*0=0
+      Сумма = 600 (только shrinkable: 600)
+      A -= (200/600) * 308 ≈ 102.7 → ≈ 97px
+      B -= (400/600) * 308 ≈ 205.3 → ≈ -5px → min-content (0 + padding)
+      C = 200px (flex-shrink:0 → не сжимается, вылезет за контейнер)
+    */
+
+    /* ============================================================
+       DEMO 3: flex: 1 vs flex-grow: 1 — главная ловушка
+       ============================================================ */
+    #demo3-auto .a { flex-grow: 1; /* flex-basis: auto (default) */ }
+    #demo3-auto .b { flex-grow: 1; }
+    #demo3-auto .c { flex-grow: 1; }
+    /* Разные размеры контента → разные итоговые ширины */
+
+    #demo3-zero .a { flex: 1; /* = flex: 1 1 0 */ }
+    #demo3-zero .b { flex: 1; }
+    #demo3-zero .c { flex: 1; }
+    /* flex-basis: 0 → все колонки одинаковые */
+
+    /* ============================================================
+       DEMO 4: min-width: 0 — позволяет flex item сжаться
+       ============================================================ */
+    #demo4 .flex-container { width: 400px; }
+    #demo4 .item { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    #demo4 .item-minwidth { min-width: 0; } /* Разрешить сжатие */
+    /* Без min-width: 0 — текст не обрезается, ломает layout */
+
+    /* ============================================================
+       DEMO 5: margin: auto — поглощение свободного пространства
+       ============================================================ */
+    #demo5 .flex-container { justify-content: flex-start; }
+    #demo5 .a { flex: 0 0 80px; }
+    #demo5 .b { flex: 0 0 80px; }
+    #demo5 .b-auto { flex: 0 0 80px; margin-left: auto; } /* Прижать вправо */
+  </style>
+</head>
+<body>
+  <h1>Flex Sizing Algorithm</h1>
+
+  <!-- DEMO 1 -->
+  <div class="demo" id="demo1">
+    <h2>Demo 1: flex-grow — пропорциональное распределение свободного места</h2>
+    <p style="font-size:0.85rem;color:#555;">Контейнер 600px. Базис у всех 100px. grow: A=1, B=2, C=0</p>
+    <div class="flex-container">
+      <div class="item a">A<br>grow:1<br>~197px</div>
+      <div class="item b">B<br>grow:2<br>~294px</div>
+      <div class="item c">C<br>grow:0<br>100px</div>
+    </div>
+  </div>
+
+  <!-- DEMO 2 -->
+  <div class="demo" id="demo2">
+    <h2>Demo 2: flex-shrink — взвешенное сжатие (большие сжимаются больше)</h2>
+    <p style="font-size:0.85rem;color:#555;">Контейнер 300px. Базис у всех 200px. shrink: A=1, B=2, C=0</p>
+    <div class="flex-container">
+      <div class="item a">A<br>shrink:1</div>
+      <div class="item b">B<br>shrink:2<br>(сжался сильнее)</div>
+      <div class="item c">C<br>shrink:0<br>(не сжался)</div>
+    </div>
+    <p style="font-size:0.85rem;color:#555;">C вылезает за контейнер — shrink:0 не уступает место</p>
+  </div>
+
+  <!-- DEMO 3 -->
+  <div class="demo" id="demo3">
+    <h2>Demo 3: flex-grow:1 (basis:auto) vs flex:1 (basis:0)</h2>
+    <p style="font-size:0.85rem;color:#555;"><strong>flex-grow: 1 (auto basis)</strong> — неравные колонки:</p>
+    <div class="flex-container" id="demo3-auto">
+      <div class="item a">A — длинный текст контент</div>
+      <div class="item b">B — средний</div>
+      <div class="item c">C</div>
+    </div>
+    <p style="font-size:0.85rem;color:#555; margin-top:1rem;"><strong>flex: 1 (basis:0)</strong> — равные колонки:</p>
+    <div class="flex-container" id="demo3-zero">
+      <div class="item a">A — длинный текст контент</div>
+      <div class="item b">B — средний</div>
+      <div class="item c">C</div>
+    </div>
+    <p style="font-size:0.85rem;color:#555;margin-top:0.5rem;">
+      <code>flex: 1</code> = <code>flex: 1 1 0</code> — все базисы 0, пространство делится поровну.<br>
+      <code>flex-grow: 1</code> при <code>flex-basis: auto</code> — базис = контент, пространство делится поверх него.
+    </p>
+  </div>
+
+  <!-- DEMO 4 -->
+  <div class="demo" id="demo4">
+    <h2>Demo 4: min-width: 0 — разрешает элементу сжаться</h2>
+    <div class="flex-container">
+      <div class="item a" style="flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
+        ❌ Без min-width:0 — этот длинный текст ломает layout и не обрезается как надо
+      </div>
+    </div>
+    <div class="flex-container" style="margin-top:0.5rem;">
+      <div class="item a item-minwidth" style="flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; min-width:0;">
+        ✅ С min-width:0 — этот длинный текст корректно обрезается с ellipsis
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:#555;">
+      Flex items имеют <code>min-width: auto</code> по умолчанию.
+      Это значит они не сожмутся меньше min-content.
+      <code>min-width: 0</code> снимает это ограничение.
+    </p>
+  </div>
+
+  <!-- DEMO 5 -->
+  <div class="demo" id="demo5">
+    <h2>Demo 5: margin: auto — поглощение свободного пространства</h2>
+    <div class="flex-container">
+      <div class="item a" style="flex:0 0 80px;">Logo</div>
+      <div class="item b" style="flex:0 0 80px;">Nav Item</div>
+      <div class="item b" style="flex:0 0 80px; margin-left:auto;">Login →</div>
+    </div>
+    <p style="font-size:0.85rem;color:#555;">
+      <code>margin-left: auto</code> на последнем элементе поглощает всё свободное пространство слева —
+      прижимает элемент к правому краю.
+      Классический паттерн для nav-bar.
+    </p>
+  </div>
+
+</body>
+</html>

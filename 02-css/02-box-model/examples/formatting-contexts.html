@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Formatting Contexts — BFC, Stacking Context</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    .demo { border: 1px solid #999; padding: 1rem; margin: 2rem 0; border-radius: 6px; }
+    .demo > h2 { margin-top: 0; font-size: 1rem; }
+
+    /* ============================================================
+       DEMO 1: Margin collapse — родитель + первый ребёнок
+       ============================================================ */
+    .collapse-bad {
+      background: #ffe;
+      /* Нет BFC → margin-top параграфа "вытекает" из родителя */
+    }
+    .collapse-bad p {
+      margin-top: 40px;
+      background: #fdd;
+    }
+
+    .collapse-fixed {
+      background: #efe;
+      display: flow-root; /* BFC предотвращает collapse */
+    }
+    .collapse-fixed p {
+      margin-top: 40px;
+      background: #dfd;
+    }
+
+    /* ============================================================
+       DEMO 2: BFC содержит floats (современный clearfix)
+       ============================================================ */
+    .float-container-bad {
+      background: #ffe;
+      /* Нет BFC → высота контейнера = 0 (float дети не учитываются) */
+    }
+    .float-container-good {
+      background: #efe;
+      display: flow-root; /* BFC: контейнер содержит float детей */
+    }
+    .floated {
+      float: left;
+      width: 80px;
+      height: 80px;
+      background: #0066cc;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+    }
+
+    /* ============================================================
+       DEMO 3: Stacking Context — z-index ловушка
+       ============================================================ */
+    .sc-parent-low {
+      position: relative;
+      z-index: 1; /* Создаёт Stacking Context */
+      background: #ffeeba;
+      padding: 1rem;
+      margin: 0.5rem 0;
+    }
+    .sc-child-high {
+      position: relative;
+      z-index: 9999; /* Высокий z-index — но внутри SC с z-index:1 */
+      background: #0066cc;
+      color: white;
+      padding: 0.5rem;
+    }
+
+    .sc-parent-high {
+      position: relative;
+      z-index: 2; /* SC с z-index:2 — ВЫШЕ sc-parent-low */
+      background: #d4edda;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      margin-top: -2rem; /* перекрываем для демонстрации */
+    }
+    .sc-child-low {
+      position: relative;
+      z-index: 1; /* Низкий z-index, но внутри SC с z-index:2 */
+      background: #28a745;
+      color: white;
+      padding: 0.5rem;
+    }
+
+    /* ============================================================
+       DEMO 4: isolation: isolate — изоляция Stacking Context
+       ============================================================ */
+    .global-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      display: none; /* Показать кнопкой */
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.5rem;
+    }
+    .isolated-component {
+      isolation: isolate; /* Создаёт SC, изолирует z-index внутри */
+      position: relative;
+      background: #e3f2fd;
+      padding: 1rem;
+    }
+    .isolated-component .inner {
+      position: relative;
+      z-index: 999; /* Соревнуется только внутри isolated-component */
+      background: #1976d2;
+      color: white;
+      padding: 0.5rem;
+    }
+
+    /* ============================================================
+       DEMO 5: IFC баг с изображениями (gap под img)
+       ============================================================ */
+    .img-container-bad {
+      background: #fdd;
+      line-height: normal; /* IFC: baseline alignment → gap под img */
+    }
+    .img-container-good {
+      background: #dfd;
+      line-height: normal;
+    }
+    .img-container-good img {
+      display: block; /* Убирает inline природу → нет IFC gap */
+    }
+    .demo-img {
+      width: 100px;
+      height: 60px;
+      background: #0066cc;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Formatting Contexts</h1>
+
+  <!-- DEMO 1: Margin Collapse -->
+  <div class="demo">
+    <h2>Demo 1: Margin Collapse — родитель и первый ребёнок</h2>
+    <p style="font-size: 0.85rem; color: #555;">Красный параграф имеет margin-top: 40px. В первом блоке он «вытекает» из родителя. Во втором — содержится внутри.</p>
+
+    <div style="display: flex; gap: 1rem;">
+      <div style="flex: 1;">
+        <p><strong>❌ Без BFC:</strong> margin вытекает</p>
+        <div class="collapse-bad">
+          <p>Параграф с margin-top: 40px</p>
+        </div>
+      </div>
+      <div style="flex: 1;">
+        <p><strong>✅ display: flow-root (BFC):</strong> margin содержится</p>
+        <div class="collapse-fixed">
+          <p>Параграф с margin-top: 40px</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEMO 2: BFC содержит float -->
+  <div class="demo">
+    <h2>Demo 2: BFC содержит float дочерние элементы</h2>
+    <div style="display: flex; gap: 1rem;">
+      <div style="flex: 1;">
+        <p><strong>❌ Без BFC:</strong> контейнер схлопывается</p>
+        <div class="float-container-bad">
+          <div class="floated">Float</div>
+          <p>Текст рядом с float</p>
+        </div>
+        <p>← Контейнер не содержит float</p>
+      </div>
+      <div style="flex: 1;">
+        <p><strong>✅ display: flow-root:</strong> содержит float</p>
+        <div class="float-container-good">
+          <div class="floated">Float</div>
+          <p>Текст рядом с float</p>
+        </div>
+        <p>← Контейнер содержит float</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEMO 3: z-index ловушка -->
+  <div class="demo">
+    <h2>Demo 3: z-index ловушка — Stacking Context</h2>
+    <p style="font-size: 0.85rem; color: #555;">
+      Синий (z-index:9999) перекрывается зелёным (z-index:1)?
+      Да! Потому что синий внутри SC с z-index:1, а зелёный — в SC с z-index:2.
+    </p>
+
+    <div style="position: relative; height: 120px;">
+      <div class="sc-parent-low">
+        SC z-index:1
+        <div class="sc-child-high">z-index: 9999 (внутри SC z-index:1)</div>
+      </div>
+      <div class="sc-parent-high">
+        SC z-index:2 — перекрывает весь первый SC
+        <div class="sc-child-low">z-index: 1 (внутри SC z-index:2)</div>
+      </div>
+    </div>
+
+    <p style="font-size: 0.85rem; margin-top: 1rem;">
+      <strong>Вывод:</strong> z-index соревнуется только внутри одного Stacking Context.
+      SC z-index:2 целиком выше SC z-index:1 вне зависимости от дочерних z-index значений.
+    </p>
+  </div>
+
+  <!-- DEMO 4: isolation: isolate -->
+  <div class="demo">
+    <h2>Demo 4: isolation: isolate — изолируй компонент</h2>
+    <div class="isolated-component">
+      <code>isolation: isolate</code> — z-index внутри не конкурирует с внешними элементами
+      <div class="inner">z-index: 999 — только внутри своего SC</div>
+    </div>
+    <p style="font-size: 0.85rem; color: #555;">
+      Используй <code>isolation: isolate</code> на модальных окнах, дропдаунах, тостах —
+      чтобы внутренние z-index не конфликтовали с глобальными.
+    </p>
+  </div>
+
+  <!-- DEMO 5: IFC gap под img -->
+  <div class="demo">
+    <h2>Demo 5: IFC баг — gap под inline изображением</h2>
+    <div style="display: flex; gap: 2rem;">
+      <div>
+        <p><strong>❌ inline img:</strong> gap снизу (красный фон видно)</p>
+        <div class="img-container-bad">
+          <div class="demo-img"></div>
+        </div>
+      </div>
+      <div>
+        <p><strong>✅ display: block на img:</strong> нет gap</p>
+        <div class="img-container-good">
+          <div class="demo-img" style="display: block;"></div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size: 0.85rem; color: #555;">
+      Inline элемент выравнивается по baseline строки.
+      Браузер резервирует место для descenders (g, y, p) ниже baseline.
+      Это gap — не padding, не border, не margin.
+      Решение: <code>display: block</code>, <code>vertical-align: bottom</code>,
+      или <code>line-height: 0</code> на родителе.
+    </p>
+  </div>
+
+</body>
+</html>

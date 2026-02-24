@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>@layer — Cascade Layers</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    .demo { border: 1px solid #ccc; padding: 1rem; margin: 1.5rem 0; border-radius: 6px; }
+    .demo h2 { margin-top: 0; font-size: 1rem; }
+
+    /* ============================================================
+       DEMO 1: Базовый порядок слоёв
+       Порядок объявления @layer = порядок приоритета (последний выше)
+       ============================================================ */
+
+    /* Объявляем порядок: reset < base < components < utilities */
+    @layer reset, base, components, utilities;
+
+    @layer reset {
+      .box { color: gray; border: 1px solid gray; padding: 0.5rem; }
+    }
+
+    @layer base {
+      /* Специфичность (0,1,0) — такая же как в reset, но приоритет выше */
+      .box { color: brown; }
+    }
+
+    @layer components {
+      /* Выше base */
+      .box { color: blue; }
+    }
+
+    @layer utilities {
+      /* Наивысший приоритет среди слоёв */
+      .box { color: green; }
+    }
+
+    /* ============================================================
+       DEMO 2: Unlayered стили выигрывают у ЛЮБОГО @layer
+       ============================================================ */
+    @layer demo2-layer {
+      /* Специфичность (1,0,0) — ID */
+      #demo2-box { color: red; }
+    }
+
+    /* Без @layer, специфичность (0,1,0) — класс */
+    /* НО это unlayered → побеждает над любым @layer! */
+    .demo2-winner { color: darkviolet; }
+
+    /* ============================================================
+       DEMO 3: !important + @layer — ОБРАТНЫЙ порядок
+       ============================================================ */
+    @layer first, second;
+
+    @layer first {
+      .important-test { color: red !important; }  /* !important в first */
+    }
+
+    @layer second {
+      .important-test { color: blue !important; } /* !important в second */
+    }
+
+    /*
+      Для !important: ПЕРВЫЙ слой имеет НАИВЫСШИЙ приоритет.
+      Ожидаемо: second > first (как для нормальных).
+      На самом деле: first > second (инверсия!).
+      Результат: красный.
+    */
+
+    /* ============================================================
+       DEMO 4: @import + @layer — third-party с низким приоритетом
+       ============================================================ */
+    /*
+      В реальном проекте:
+      @import url("bootstrap.css") layer(vendor);
+
+      Всё что мы пишем без @layer будет выше vendor.
+    */
+    @layer vendor {
+      .overridden-by-us {
+        background: #007bff;
+        color: white;
+        padding: 0.5rem;
+        border-radius: 4px;
+      }
+    }
+
+    /* Наш код без @layer — автоматически выше vendor */
+    .overridden-by-us {
+      background: #28a745; /* Наш цвет победит */
+    }
+
+    /* ============================================================
+       DEMO 5: revert-layer — откат к предыдущему слою
+       ============================================================ */
+    @layer theme-base {
+      .revert-demo { color: navy; font-weight: bold; }
+    }
+
+    @layer theme-override {
+      .revert-demo {
+        color: revert-layer; /* Откатиться к theme-base → navy */
+        font-size: 1.25rem;  /* Это остаётся */
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Cascade Layers (@layer)</h1>
+
+  <div class="demo">
+    <h2>Demo 1: Порядок слоёв (последний = высший приоритет)</h2>
+    <!--
+      Ожидаем зелёный: utilities — последний слой → высший приоритет.
+      Специфичность одинакова (0,1,0) во всех слоях — побеждает порядок слоёв.
+    -->
+    <div class="box">
+      Этот текст зелёный (utilities слой победил)
+    </div>
+    <small>@layer reset, base, components, utilities — все с .box { color: ... }</small>
+  </div>
+
+  <div class="demo">
+    <h2>Demo 2: Unlayered стиль побеждает ID внутри @layer</h2>
+    <!--
+      #demo2-box внутри @layer: (1,0,0)
+      .demo2-winner без @layer: (0,1,0)
+      Казалось бы ID должен победить, но unlayered > любой @layer
+    -->
+    <div id="demo2-box" class="demo2-winner">
+      Этот текст тёмно-фиолетовый.<br>
+      Класс (.demo2-winner) без @layer победил ID (#demo2-box) внутри @layer.
+    </div>
+  </div>
+
+  <div class="demo">
+    <h2>Demo 3: !important + @layer — ИНВЕРСИЯ (первый слой побеждает)</h2>
+    <!--
+      Ожидаем красный: first слой с !important побеждает second с !important.
+      Это ПРОТИВОПОЛОЖНО нормальному поведению (обычно second > first).
+    -->
+    <div class="important-test">
+      Этот текст красный.<br>
+      !important в первом (@layer first) победил !important во втором (@layer second).
+    </div>
+  </div>
+
+  <div class="demo">
+    <h2>Demo 4: Наш код vs vendor @layer</h2>
+    <div class="overridden-by-us">
+      Зелёная кнопка — наш цвет победил vendor стиль.<br>
+      Наш .overridden-by-us без @layer выше vendor @layer.
+    </div>
+  </div>
+
+  <div class="demo">
+    <h2>Demo 5: revert-layer — откат к предыдущему слою</h2>
+    <div class="revert-demo">
+      Синий текст (navy из theme-base) — color: revert-layer<br>
+      Большой размер (из theme-override) — font-size остался
+    </div>
+  </div>
+
+  <!--
+    ИТОГОВЫЕ ПРАВИЛА @layer:
+
+    1. Порядок объявления определяет приоритет: последний = выше
+    2. Unlayered стили всегда выше ВСЕХ @layer
+    3. !important инвертирует порядок: первый @layer с !important побеждает
+    4. @import url("...") layer(name): third-party в слой = низкий приоритет
+    5. revert-layer: откатиться к значению из предыдущего слоя
+  -->
+
+</body>
+</html>
