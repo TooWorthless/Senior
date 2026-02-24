@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import AppSidebar from "@/components/AppSidebar";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
 import type { ModuleInfo } from "@/lib/types";
 
 interface Props {
@@ -48,6 +49,9 @@ export default function AppFrame({ modules, children }: Props) {
           <span className="mobile-title-mark">⚡</span>
           <span className="mobile-title-text">Senior Prep</span>
         </Link>
+        <div className="mobile-topbar-theme">
+          <ThemeSwitcher />
+        </div>
       </div>
 
       <div
@@ -57,13 +61,18 @@ export default function AppFrame({ modules, children }: Props) {
       />
 
       <aside className={`app-sidebar ${sidebarOpen ? "open" : ""}`}>
-        <Link href="/" className="sidebar-header" style={{ textDecoration: "none" }}>
-          <div className="sidebar-logo">⚡</div>
-          <div>
-            <div className="sidebar-title">Senior Prep</div>
-            <div className="sidebar-sub">Frontend Interview</div>
+        <div className="sidebar-header-row">
+          <Link href="/" className="sidebar-header" style={{ textDecoration: "none" }}>
+            <div className="sidebar-logo">⚡</div>
+            <div>
+              <div className="sidebar-title">Senior Prep</div>
+              <div className="sidebar-sub">Frontend Interview</div>
+            </div>
+          </Link>
+          <div className="sidebar-header-theme">
+            <ThemeSwitcher />
           </div>
-        </Link>
+        </div>
         <Suspense fallback={<div style={{ padding: 16, color: "#8b949e", fontSize: 12 }}>Loading nav...</div>}>
           <AppSidebar modules={modules} />
         </Suspense>

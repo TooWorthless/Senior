@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import type { ModuleInfo } from "@/lib/types";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
 
 interface Props {
   modules: ModuleInfo[];
@@ -118,20 +117,19 @@ export default function AppSidebar({ modules }: Props) {
       })}
 
       {/* Footer hint */}
-      <div style={{
-        padding: "16px 16px 4px",
-        fontSize: 10,
-        color: "var(--text-muted)",
-        lineHeight: 1.6,
-        borderTop: "1px solid var(--border)",
-        marginTop: 8,
-      }}>
+      <div
+        style={{
+          padding: "16px 16px 8px",
+          fontSize: 10,
+          color: "var(--text-muted)",
+          lineHeight: 1.6,
+          borderTop: "1px solid var(--border)",
+          marginTop: 8,
+        }}
+      >
         <div style={{ marginBottom: 2 }}>▶ — раскрыть примеры</div>
         <div>🟡 .js · 🔴 .html · 🔵 .css</div>
       </div>
-
-      {/* Theme switcher */}
-      <ThemeSwitcher />
     </div>
   );
 }

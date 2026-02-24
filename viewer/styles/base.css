@@ -26,6 +26,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
 }
 
 /* ── Global background image + overlay ─────────────────────────────────── */
@@ -75,9 +76,15 @@ body::after {
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* Весь скролл внутри .sidebar-scroll, поэтому здесь overflow должен быть visible,
+     чтобы выпадающее меню переключения темы не обрезалось границами сайдбара. */
+  overflow: visible;
   position: relative;
   flex-shrink: 0;
+}
+
+.sidebar-header-theme {
+  padding: 12px 12px 12px 0;
 }
 
 /* Ambient glow using theme token */
@@ -126,9 +133,16 @@ body::after {
 }
 
 /* ── Sidebar header ────────────────────────────────────────────────────── */
+.sidebar-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
 .sidebar-header {
   padding: 16px 18px 14px;
-  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -454,13 +468,17 @@ body::after {
   border-collapse: collapse;
   margin: 20px 0;
   font-size: 13px;
+  /* Непрозрачный фон у всех таблиц, чтобы фон страницы не просвечивал */
+  background: var(--bg-card);
+  overflow: hidden;
+  border-radius: 8px !important;
 }
 
 .markdown-body th {
   background: var(--bg-hover);
   color: var(--text-primary);
   padding: 10px 14px;
-  border: 1px solid var(--border);
+  border-right: 1px solid var(--border);
   font-weight: 600;
   text-align: left;
   font-size: 11px;
@@ -468,10 +486,20 @@ body::after {
   letter-spacing: 0.07em;
 }
 
+.markdown-body th:last-child {
+  border-right: 0;
+}
+
 .markdown-body td {
   padding: 8px 14px;
-  border: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-top: 1px solid var(--border);
   color: var(--text-secondary);
+}
+.markdown-body td:last-child {
+  border-right: 0;
+}
+.markdown-body tr {
 }
 
 .markdown-body tr:hover td {
@@ -910,7 +938,7 @@ body::after {
   color: var(--text-muted);
   text-decoration: none;
   cursor: default;
-  border-bottom: 1px dashed var(--border-hover);
+  /* border-bottom: 1px dashed var(--border-hover); */
 }
 
 /* ── Code block wrapper + header ───────────────────────────────────────── */
@@ -1160,28 +1188,6 @@ body::after {
   overflow: hidden;
 }
 
-.hero::before {
-  content: "";
-  position: absolute;
-  top: -60px;
-  left: -80px;
-  width: 360px;
-  height: 360px;
-  background: radial-gradient(circle, var(--orb-1) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-.hero::after {
-  content: "";
-  position: absolute;
-  top: 20px;
-  right: -60px;
-  width: 280px;
-  height: 280px;
-  background: radial-gradient(circle, var(--orb-2) 0%, transparent 60%);
-  pointer-events: none;
-}
-
 .hero-label {
   display: inline-flex;
   align-items: center;
@@ -1312,8 +1318,8 @@ body::after {
 /* ── Theme Switcher ────────────────────────────────────────────────────── */
 .theme-switcher-wrap {
   position: relative;
-  padding: 10px 12px;
-  border-top: 1px solid var(--border);
+  padding: 0;
+  border-top: none;
   flex-shrink: 0;
 }
 
@@ -1357,10 +1363,8 @@ body::after {
 }
 
 .theme-dropdown {
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 12px;
-  right: 12px;
+  /* Позиционирование переопределяется inline-стилем в ThemeSwitcher (fixed + left/right),
+     здесь оставляем только визуальные стили. */
   background: var(--bg-surface);
   border: 1px solid var(--border-hover);
   border-radius: 10px;
@@ -1457,7 +1461,7 @@ body::after {
 @media (max-width: 920px) {
   .app-layout {
     display: block;
-    height: 100vh;
+    overflow-y: hidden;
   }
 
   .mobile-topbar {
@@ -1469,7 +1473,7 @@ body::after {
     align-items: center;
     gap: 10px;
     padding: 0 14px;
-    background: rgba(10, 10, 18, 0.72);
+    background: rgba(172, 172, 204, 0.321);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
   }
@@ -1553,7 +1557,7 @@ body::after {
 
   /* Main */
   .app-main {
-    height: calc(100vh - 52px);
+    height: 100vh;
   }
 
   .content-page {

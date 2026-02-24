@@ -2,44 +2,51 @@
    LIGHT — clean, minimal, modern
    ══════════════════════════════════════════════════════════════════ */
 [data-theme="light"] {
-  --bg-base:    #f4f6fb;
+  --bg-base: #e7ecf7;
   --bg-surface: #ffffff;
-  --bg-card:    #ffffff;
-  --bg-hover:   #eef1f8;
-  --bg-input:   #f9fafc;
+  --bg-card: #ffffff;
+  --bg-hover: #eef1f8;
+  --bg-input: #f9fafc;
 
-  --border:         #e1e6f0;
-  --border-hover:   #c8d0e4;
-  --border-active:  #6366f1;
+  --border: #e1e6f0;
+  --border-hover: #c8d0e4;
+  --border-active: #6366f1;
 
-  --accent:       #6366f1;
+  --accent: #6366f1;
   --accent-light: #4f46e5;
-  --accent-dim:   rgba(99, 102, 241, 0.08);
-  --accent-glow:  rgba(99, 102, 241, 0.20);
-  --accent-2:     #8b5cf6;
+  --accent-dim: rgba(99, 102, 241, 0.08);
+  --accent-glow: rgba(99, 102, 241, 0.2);
+  --accent-2: #8b5cf6;
 
-  --green:       #059669;
-  --green-dim:   rgba(5, 150, 105, 0.08);
-  --green-glow:  rgba(5, 150, 105, 0.20);
-  --amber:       #d97706;
-  --red:         #dc2626;
-  --blue:        #2563eb;
+  --green: #059669;
+  --green-dim: rgba(5, 150, 105, 0.08);
+  --green-glow: rgba(5, 150, 105, 0.2);
+  --amber: #d97706;
+  --red: #dc2626;
+  --blue: #2563eb;
 
-  --text-primary:   #0f1117;
-  --text-secondary: #374151;
-  --text-muted:     #9ca3af;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
 
   /* Component-specific tokens */
-  --code-wrapper-bg:  #f6f8fa;
-  --code-bar-bg:      #eef1f6;
-  --orb-1:            rgba(99, 102, 241, 0.06);
-  --orb-2:            rgba(139, 92, 246, 0.04);
+  --code-wrapper-bg: #f6f8fa;
+  --code-bar-bg: #eef1f6;
+  --orb-1: rgba(99, 102, 241, 0.04);
+  --orb-2: rgba(139, 92, 246, 0.03);
   --sidebar-glow-col: rgba(99, 102, 241, 0.06);
-  --card-glow-col:    rgba(99, 102, 241, 0.04);
-  --bg-image-opacity: 0.08;
+  --card-glow-col: rgba(99, 102, 241, 0.04);
+  /* Background image only for light theme */
+  --bg-image: url("/pain.png");
+  --bg-image-opacity: 0.8;
 }
 
 /* ── Light-specific overrides ──────────────────────────────────────────── */
+
+[data-theme="light"] body {
+  /* Даем видеть pain.png сквозь базовый фон */
+  background: transparent;
+}
 
 [data-theme="light"] .app-sidebar {
   background: #fafbff;
@@ -52,7 +59,7 @@
 
 [data-theme="light"] .module-card:hover {
   box-shadow:
-    0 8px 28px rgba(0, 0, 0, 0.10),
+    0 8px 28px rgba(0, 0, 0, 0.1),
     0 0 0 1px var(--border-hover),
     0 4px 8px rgba(99, 102, 241, 0.06);
 }
@@ -61,20 +68,91 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
+/* Content wrapper as white card to reduce glare */
+[data-theme="light"] .content-page {
+  background: rgba(255, 255, 255, 0.478);
+  border-radius: 18px;
+  border: 1px solid rgba(209, 213, 219, 0.9);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+  margin-top: 28px;
+  margin-bottom: 32px;
+  padding-top: 28px;
+  padding-bottom: 40px;
+}
+
+/* Make hero orbs much softer in light mode */
+[data-theme="light"] body::after {
+  background:
+    radial-gradient(
+      900px 520px at 10% 0%,
+      rgba(148, 163, 184, 0.16) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      700px 460px at 100% 10%,
+      rgba(129, 140, 248, 0.12) 0%,
+      transparent 60%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.75),
+      rgba(231, 235, 247, 0.9)
+    );
+}
+
 /* Code blocks in light mode — use HLJS github theme colors */
+[data-theme="light"] .hljs-block {
+  background: #f9fafb !important;
+  border-color: #adb0b5 !important;
+}
+
 [data-theme="light"] pre code.hljs {
-  background: #f6f8fa;
-  color: #24292f;
+  background: transparent;
+  color: #111827;
+}
+
+/* Более сочные цвета токенов, чтобы не сливаться с серым */
+[data-theme="light"] .hljs-keyword,
+[data-theme="light"] .hljs-selector-tag,
+[data-theme="light"] .hljs-literal {
+  color: #7c3aed; /* фиолетовый, как в VS Code */
+  font-weight: 600;
+}
+
+[data-theme="light"] .hljs-string,
+[data-theme="light"] .hljs-attr,
+[data-theme="light"] .hljs-template-tag {
+  color: #b45309; /* насыщённый оранжевый */
+}
+
+[data-theme="light"] .hljs-number,
+[data-theme="light"] .hljs-boolean {
+  color: #0369a1; /* глубокий синий */
+}
+
+[data-theme="light"] .hljs-comment {
+  color: #9ca3af; /* более тёмный серый, но не чёрный */
+  font-style: italic;
+}
+
+[data-theme="light"] .hljs-title,
+[data-theme="light"] .hljs-function .hljs-title {
+  color: #0f766e; /* teal для имён функций */
+}
+
+[data-theme="light"] .hljs-operator,
+[data-theme="light"] .hljs-punctuation {
+  color: #374151;
 }
 
 [data-theme="light"] .code-block-bar {
-  border-bottom-color: #d0d7de;
+  border-bottom-color: #d1d5db;
 }
 
 /* Inline code */
 [data-theme="light"] .inline-code {
-  color: #cf4a0c;
-  border-color: #d0d7de;
+  color: #b45309;
+  border-color: #d1d5db;
 }
 
 /* Console panels */
@@ -87,20 +165,40 @@
 }
 
 [data-theme="light"] .console-output,
-[data-theme="light"] .inline-console { background: #f9fafc; }
+[data-theme="light"] .inline-console {
+  background: #f9fafc;
+}
 
 [data-theme="light"] .log-line.log,
-[data-theme="light"] .inline-log-line.log { color: var(--text-primary); }
+[data-theme="light"] .inline-log-line.log {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .log-line,
+[data-theme="light"] .log-prefix {
+  color: #000000 !important;
+}
 
 /* Buttons */
-[data-theme="light"] .mode-switch   { background: #f0f3fa; border-color: var(--border); }
-[data-theme="light"] .mode-btn.active { background: #ffffff; }
+[data-theme="light"] .mode-switch {
+  background: #f0f3fa;
+  border-color: var(--border);
+}
+[data-theme="light"] .mode-btn.active {
+  background: #ffffff;
+}
 
 /* Theme dropdown */
-[data-theme="light"] .theme-trigger { background: #f0f3fa; }
-[data-theme="light"] .theme-swatch-sm { border-color: rgba(0, 0, 0, 0.10); }
+[data-theme="light"] .theme-trigger {
+  background: #f0f3fa;
+}
+[data-theme="light"] .theme-swatch-sm {
+  border-color: rgba(0, 0, 0, 0.1);
+}
 [data-theme="light"] .theme-dropdown {
   background: #ffffff;
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
 }
-[data-theme="light"] .theme-swatch { border-color: rgba(0, 0, 0, 0.08); }
+[data-theme="light"] .theme-swatch {
+  border-color: rgba(0, 0, 0, 0.08);
+}

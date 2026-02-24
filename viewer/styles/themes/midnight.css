@@ -5,10 +5,10 @@
 [data-theme="midnight"] {
   --sidebar-width: 272px;
   /* Background image (place file at viewer/public/matrix.png) */
-  --bg-image: url("/matrix.jpg");
-  --bg-image-opacity: 0.18;
+  --bg-image: url("/purple.jpg");
+  --bg-image-opacity: 1;
 
-  --bg-base: #07060f;
+  --bg-base: rgb(7, 6, 15, 0.8);
   --bg-surface: #0e0c1a;
   --bg-card: #110f1e;
   --bg-hover: #17152a;

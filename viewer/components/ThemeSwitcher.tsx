@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const THEMES = [
   {
@@ -34,6 +34,10 @@ type ThemeId = typeof THEMES[number]["id"];
 export default function ThemeSwitcher() {
   const [theme, setTheme] = useState<ThemeId>("midnight");
   const [open, setOpen]   = useState(false);
+  const [dropdownTop, setDropdownTop] = useState<number | null>(null);
+  const [dropdownLeft, setDropdownLeft] = useState<number | null>(null);
+  const [dropdownMinWidth, setDropdownMinWidth] = useState<number | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const saved = (localStorage.getItem("theme") ?? "midnight") as ThemeId;
@@ -50,11 +54,41 @@ export default function ThemeSwitcher() {
 
   const current = THEMES.find((t) => t.id === theme) ?? THEMES[0];
 
+  const toggleOpen = () => {
+    setOpen((prev) => {
+      const next = !prev;
+      if (next && triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        const vw = typeof window !== "undefined" ? window.innerWidth : 0;
+        // 12px горизонтального отступа с каждой стороны
+        const margin = 12;
+        const maxLeft = Math.max(margin, vw - margin - rect.width);
+        const left = Math.min(rect.left, maxLeft);
+
+        setDropdownTop(rect.bottom + 6);
+        setDropdownLeft(left);
+        setDropdownMinWidth(rect.width);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="theme-switcher-wrap">
       {/* Dropdown */}
       {open && (
-        <div className="theme-dropdown">
+        <div
+          className="theme-dropdown"
+          style={{
+            position: "fixed",
+            top: dropdownTop ?? 64,
+            left: dropdownLeft ?? 12,
+            right: "auto",
+            minWidth: dropdownMinWidth ?? undefined,
+            width: "max-content",
+            maxWidth: "min(260px, 100vw - 24px)",
+          }}
+        >
           {THEMES.map((t) => (
             <button
               key={t.id}
@@ -75,17 +109,14 @@ export default function ThemeSwitcher() {
         </div>
       )}
 
-      {/* Trigger */}
+      {/* Trigger — компактная кнопка с текстом Theme */}
       <button
         className="theme-trigger"
-        onClick={() => setOpen((v) => !v)}
+        ref={triggerRef}
+        onClick={toggleOpen}
         title="Сменить тему"
       >
-        <span
-          className="theme-swatch-sm"
-          style={{ background: current.color }}
-        />
-        <span className="theme-trigger-label">{current.label}</span>
+        <span className="theme-trigger-label">Theme</span>
         <span className="theme-trigger-chevron">{open ? "▲" : "▼"}</span>
       </button>
     </div>
