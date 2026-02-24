@@ -1,386 +1,557 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>Observers & rAF</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: monospace; padding: 20px; background: #0d1117; color: #c9d1d9; }
-    .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
-    button { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 3px; font-family: monospace; }
-    button.red  { background: #b91c1c; }
-    button.blue { background: #1d4ed8; }
-    output { display: block; background: #010409; padding: 10px; border-radius: 6px; margin-top: 8px; white-space: pre-wrap; font-size: 12px; min-height: 40px; max-height: 200px; overflow-y: auto; }
-    h2 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <title>Observers & rAF</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: monospace;
+        padding: 20px;
+        background: #0d1117;
+        color: #c9d1d9;
+      }
+      .box {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 12px 0;
+      }
+      button {
+        background: #238636;
+        color: white;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 3px;
+        font-family: monospace;
+      }
+      button.red {
+        background: #b91c1c;
+      }
+      button.blue {
+        background: #1d4ed8;
+      }
+      output {
+        display: block;
+        background: #010409;
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 8px;
+        white-space: pre-wrap;
+        font-size: 12px;
+        min-height: 40px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      h2 {
+        color: #f0f6fc;
+        border-bottom: 1px solid #30363d;
+        padding-bottom: 8px;
+        margin-top: 0;
+      }
 
-    /* Lazy loading */
-    .lazy-container { height: 200px; overflow-y: scroll; background: #21262d; border-radius: 6px; padding: 8px; }
-    .lazy-img { width: 100%; height: 80px; background: #30363d; border-radius: 4px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: #8b949e; font-size: 12px; transition: background 0.3s; }
-    .lazy-img.loaded { background: #1a4731; color: #3fb950; }
+      /* Lazy loading */
+      .lazy-container {
+        height: 200px;
+        overflow-y: scroll;
+        background: #21262d;
+        border-radius: 6px;
+        padding: 8px;
+      }
+      .lazy-img {
+        width: 100%;
+        height: 80px;
+        background: #30363d;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #8b949e;
+        font-size: 12px;
+        transition: background 0.3s;
+      }
+      .lazy-img.loaded {
+        background: #1a4731;
+        color: #3fb950;
+      }
 
-    /* Animate on scroll */
-    .anim-container { height: 250px; overflow-y: scroll; background: #21262d; border-radius: 6px; padding: 8px; }
-    .anim-card { height: 60px; margin-bottom: 8px; background: #30363d; border-radius: 4px; display: flex; align-items: center; padding: 0 12px; opacity: 0; transform: translateX(-20px); transition: opacity 0.4s, transform 0.4s; }
-    .anim-card.visible { opacity: 1; transform: translateX(0); }
+      /* Animate on scroll */
+      .anim-container {
+        height: 250px;
+        overflow-y: scroll;
+        background: #21262d;
+        border-radius: 6px;
+        padding: 8px;
+      }
+      .anim-card {
+        height: 60px;
+        margin-bottom: 8px;
+        background: #30363d;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        opacity: 0;
+        transform: translateX(-20px);
+        transition:
+          opacity 0.4s,
+          transform 0.4s;
+      }
+      .anim-card.visible {
+        opacity: 1;
+        transform: translateX(0);
+      }
 
-    /* ResizeObserver */
-    .resizable-box { background: #21262d; border: 2px dashed #30363d; border-radius: 6px; padding: 16px; min-width: 100px; resize: both; overflow: auto; min-height: 80px; }
-    .resizable-box.compact { background: #2d1a1a; border-color: #b91c1c; }
+      /* ResizeObserver */
+      .resizable-box {
+        background: #21262d;
+        border: 2px dashed #30363d;
+        border-radius: 6px;
+        padding: 16px;
+        min-width: 100px;
+        resize: both;
+        overflow: auto;
+        min-height: 80px;
+      }
+      .resizable-box.compact {
+        background: #2d1a1a;
+        border-color: #b91c1c;
+      }
 
-    /* rAF animation */
-    .raf-track { background: #21262d; height: 50px; border-radius: 6px; overflow: hidden; position: relative; margin: 8px 0; }
-    .raf-ball { width: 40px; height: 40px; border-radius: 50%; position: absolute; top: 5px; left: 0; transition: none; }
-  </style>
-</head>
-<body>
-<h1>Observers & requestAnimationFrame</h1>
+      /* rAF animation */
+      .raf-track {
+        background: #21262d;
+        height: 50px;
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+        margin: 8px 0;
+      }
+      .raf-ball {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        position: absolute;
+        top: 5px;
+        left: 0;
+        transition: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Observers & requestAnimationFrame</h1>
 
-<!-- ─── IntersectionObserver: Lazy Load ── -->
-<div class="box">
-  <h2>IntersectionObserver — Lazy Loading</h2>
-  <p style="color:#8b949e;font-size:13px">Прокрути список — изображения загружаются при появлении в viewport.</p>
-  <div class="lazy-container" id="lazy-container">
-    <!-- Заполним из JS -->
-  </div>
-  <output id="out-io"></output>
-</div>
+    <!-- ─── IntersectionObserver: Lazy Load ── -->
+    <div class="box">
+      <h2>IntersectionObserver — Lazy Loading</h2>
+      <p style="color: #8b949e; font-size: 13px">
+        Прокрути список — изображения загружаются при появлении в viewport.
+      </p>
+      <div class="lazy-container" id="lazy-container">
+        <!-- Заполним из JS -->
+      </div>
+      <output id="out-io"></output>
+    </div>
 
-<!-- ─── IntersectionObserver: Animate on scroll ── -->
-<div class="box">
-  <h2>IntersectionObserver — Animate on Scroll</h2>
-  <div class="anim-container" id="anim-container">
-    <!-- Заполним из JS -->
-  </div>
-  <output id="out-anim">Прокрути список</output>
-</div>
+    <!-- ─── IntersectionObserver: Animate on scroll ── -->
+    <div class="box">
+      <h2>IntersectionObserver — Animate on Scroll</h2>
+      <div class="anim-container" id="anim-container">
+        <!-- Заполним из JS -->
+      </div>
+      <output id="out-anim">Прокрути список</output>
+    </div>
 
-<!-- ─── MutationObserver ──────────────── -->
-<div class="box">
-  <h2>MutationObserver — наблюдение за DOM</h2>
-  <div id="mutation-target" style="background:#21262d;padding:12px;border-radius:6px;min-height:40px">
-    <span id="mut-text">Исходный текст</span>
-  </div>
-  <br>
-  <button onclick="mut_changeText()">Изменить текст</button>
-  <button onclick="mut_addChild()">Добавить элемент</button>
-  <button onclick="mut_changeAttr()">Изменить атрибут</button>
-  <button onclick="mut_removeChild()">Удалить дочерний</button>
-  <button class="red" onclick="mut_disconnect()">Disconnect</button>
-  <output id="out-mut">MutationObserver активен...</output>
-</div>
+    <!-- ─── MutationObserver ──────────────── -->
+    <div class="box">
+      <h2>MutationObserver — наблюдение за DOM</h2>
+      <div
+        id="mutation-target"
+        style="
+          background: #21262d;
+          padding: 12px;
+          border-radius: 6px;
+          min-height: 40px;
+        "
+      >
+        <span id="mut-text">Исходный текст</span>
+      </div>
+      <br />
+      <button onclick="mut_changeText()">Изменить текст</button>
+      <button onclick="mut_addChild()">Добавить элемент</button>
+      <button onclick="mut_changeAttr()">Изменить атрибут</button>
+      <button onclick="mut_removeChild()">Удалить дочерний</button>
+      <button class="red" onclick="mut_disconnect()">Disconnect</button>
+      <output id="out-mut">MutationObserver активен...</output>
+    </div>
 
-<!-- ─── ResizeObserver ───────────────── -->
-<div class="box">
-  <h2>ResizeObserver — размер элемента</h2>
-  <p style="color:#8b949e;font-size:13px">Потяни за угол div'а (resize: both)</p>
-  <div class="resizable-box" id="resizable">
-    Потяни за правый нижний угол ↘
-  </div>
-  <output id="out-ro">Размеры обновятся при resize</output>
-</div>
+    <!-- ─── ResizeObserver ───────────────── -->
+    <div class="box">
+      <h2>ResizeObserver — размер элемента</h2>
+      <p style="color: #8b949e; font-size: 13px">
+        Потяни за угол div'а (resize: both)
+      </p>
+      <div class="resizable-box" id="resizable">
+        Потяни за правый нижний угол ↘
+      </div>
+      <output id="out-ro">Размеры обновятся при resize</output>
+    </div>
 
-<!-- ─── requestAnimationFrame ───────── -->
-<div class="box">
-  <h2>requestAnimationFrame — анимации</h2>
+    <!-- ─── requestAnimationFrame ───────── -->
+    <div class="box">
+      <h2>requestAnimationFrame — анимации</h2>
 
-  <div style="color:#8b949e;font-size:12px;margin-bottom:8px">Синусоидальное движение (Math.sin)</div>
-  <div class="raf-track">
-    <div class="raf-ball" id="ball1" style="background:#3b82f6"></div>
-  </div>
+      <div style="color: #8b949e; font-size: 12px; margin-bottom: 8px">
+        Синусоидальное движение (Math.sin)
+      </div>
+      <div class="raf-track">
+        <div class="raf-ball" id="ball1" style="background: #3b82f6"></div>
+      </div>
 
-  <div style="color:#8b949e;font-size:12px;margin-bottom:8px">easeOutCubic анимация к точке</div>
-  <div class="raf-track">
-    <div class="raf-ball" id="ball2" style="background:#f97316"></div>
-  </div>
+      <div style="color: #8b949e; font-size: 12px; margin-bottom: 8px">
+        easeOutCubic анимация к точке
+      </div>
+      <div class="raf-track">
+        <div class="raf-ball" id="ball2" style="background: #f97316"></div>
+      </div>
 
-  <br>
-  <button onclick="startRAF()">▶ Start</button>
-  <button class="red" onclick="stopRAF()">■ Stop</button>
-  <button onclick="animateBall2()">Animate ball2 →</button>
-  <output id="out-raf">Нажми Start</output>
-</div>
+      <br />
+      <button onclick="startRAF()">▶ Start</button>
+      <button class="red" onclick="stopRAF()">■ Stop</button>
+      <button onclick="animateBall2()">Animate ball2 →</button>
+      <output id="out-raf">Нажми Start</output>
+    </div>
 
-<!-- ─── Performance Observer ─────────── -->
-<div class="box">
-  <h2>PerformanceObserver — Web Vitals</h2>
-  <button onclick="showPerfMetrics()">Показать метрики страницы</button>
-  <button onclick="simulateLongTask()">Симулировать Long Task (100ms)</button>
-  <output id="out-perf">Нажми кнопку</output>
-</div>
+    <!-- ─── Performance Observer ─────────── -->
+    <div class="box">
+      <h2>PerformanceObserver — Web Vitals</h2>
+      <button onclick="showPerfMetrics()">Показать метрики страницы</button>
+      <button onclick="simulateLongTask()">
+        Симулировать Long Task (100ms)
+      </button>
+      <output id="out-perf">Нажми кнопку</output>
+    </div>
 
-<script>
-// ─── IntersectionObserver: Lazy Load ────
-const lazyContainer = document.getElementById("lazy-container");
-let ioLog = [];
+    <script>
+      // ─── IntersectionObserver: Lazy Load ────
+      const lazyContainer = document.getElementById("lazy-container");
+      let ioLog = [];
 
-// Создаём "изображения" (заглушки)
-for (let i = 1; i <= 15; i++) {
-  const div = document.createElement("div");
-  div.className = "lazy-img";
-  div.dataset.src = `image-${i}`;
-  div.textContent = `📷 Image ${i} (not loaded)`;
-  lazyContainer.appendChild(div);
-}
+      // Создаём "изображения" (заглушки)
+      for (let i = 1; i <= 15; i++) {
+        const div = document.createElement("div");
+        div.className = "lazy-img";
+        div.dataset.src = `image-${i}`;
+        div.textContent = `📷 Image ${i} (not loaded)`;
+        lazyContainer.appendChild(div);
+      }
 
-const lazyObserver = new IntersectionObserver((entries, obs) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const el = entry.target;
-      const src = el.dataset.src;
-      // Симулируем загрузку
-      setTimeout(() => {
-        el.textContent = `✅ ${src} loaded`;
-        el.classList.add("loaded");
-      }, 50);
-      obs.unobserve(el);
-      ioLog.unshift(`Загружен: ${src} (ratio: ${entry.intersectionRatio.toFixed(2)})`);
-      document.getElementById("out-io").textContent =
-        `IntersectionObserver: threshold=0\n` + ioLog.slice(0, 8).join("\n");
-    }
-  });
-}, {
-  root: lazyContainer,  // контейнер как root (не viewport)
-  rootMargin: "20px",
-  threshold: 0,
-});
+      const lazyObserver = new IntersectionObserver(
+        (entries, obs) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const el = entry.target;
+              const src = el.dataset.src;
+              // Симулируем загрузку
+              setTimeout(() => {
+                el.textContent = `✅ ${src} loaded`;
+                el.classList.add("loaded");
+              }, 50);
+              obs.unobserve(el);
+              ioLog.unshift(
+                `Загружен: ${src} (ratio: ${entry.intersectionRatio.toFixed(2)})`,
+              );
+              document.getElementById("out-io").textContent =
+                `IntersectionObserver: threshold=0\n` +
+                ioLog.slice(0, 8).join("\n");
+            }
+          });
+        },
+        {
+          root: lazyContainer, // контейнер как root (не viewport)
+          rootMargin: "20px",
+          threshold: 0,
+        },
+      );
 
-lazyContainer.querySelectorAll(".lazy-img").forEach(el => lazyObserver.observe(el));
+      lazyContainer
+        .querySelectorAll(".lazy-img")
+        .forEach((el) => lazyObserver.observe(el));
 
-// ─── IntersectionObserver: Animate ──────
-const animContainer = document.getElementById("anim-container");
-for (let i = 1; i <= 12; i++) {
-  const card = document.createElement("div");
-  card.className = "anim-card";
-  card.textContent = `Card ${i} — scroll to reveal`;
-  animContainer.appendChild(card);
-}
+      // ─── IntersectionObserver: Animate ──────
+      const animContainer = document.getElementById("anim-container");
+      for (let i = 1; i <= 12; i++) {
+        const card = document.createElement("div");
+        card.className = "anim-card";
+        card.textContent = `Card ${i} — scroll to reveal`;
+        animContainer.appendChild(card);
+      }
 
-const animObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    entry.target.classList.toggle("visible", entry.isIntersecting);
-    if (entry.isIntersecting) {
-      document.getElementById("out-anim").textContent =
-        `Виден: ${entry.target.textContent}\n` +
-        `intersectionRatio: ${entry.intersectionRatio.toFixed(2)}`;
-    }
-  });
-}, { root: animContainer, threshold: 0.3 });
+      const animObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            entry.target.classList.toggle("visible", entry.isIntersecting);
+            if (entry.isIntersecting) {
+              document.getElementById("out-anim").textContent =
+                `Виден: ${entry.target.textContent}\n` +
+                `intersectionRatio: ${entry.intersectionRatio.toFixed(2)}`;
+            }
+          });
+        },
+        { root: animContainer, threshold: 0.3 },
+      );
 
-animContainer.querySelectorAll(".anim-card").forEach(el => animObserver.observe(el));
+      animContainer
+        .querySelectorAll(".anim-card")
+        .forEach((el) => animObserver.observe(el));
 
-// ─── MutationObserver ───────────────────
-let mutLog = [];
-let mutCounter = 0;
+      // ─── MutationObserver ───────────────────
+      let mutLog = [];
+      let mutCounter = 0;
 
-const mutObserver = new MutationObserver((mutations) => {
-  for (const m of mutations) {
-    let msg = `[${m.type}]`;
-    if (m.type === "childList") {
-      if (m.addedNodes.length)   msg += ` добавлено: ${m.addedNodes.length}`;
-      if (m.removedNodes.length) msg += ` удалено: ${m.removedNodes.length}`;
-    }
-    if (m.type === "attributes") {
-      msg += ` ${m.attributeName}: "${m.oldValue}" → "${m.target.getAttribute(m.attributeName)}"`;
-    }
-    if (m.type === "characterData") {
-      msg += ` текст: "${m.oldValue}" → "${m.target.textContent}"`;
-    }
-    mutLog.unshift(msg);
-  }
-  document.getElementById("out-mut").textContent =
-    "MutationObserver лог:\n" + mutLog.slice(0, 10).join("\n");
-});
+      const mutObserver = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          let msg = `[${m.type}]`;
+          if (m.type === "childList") {
+            if (m.addedNodes.length)
+              msg += ` добавлено: ${m.addedNodes.length}`;
+            if (m.removedNodes.length)
+              msg += ` удалено: ${m.removedNodes.length}`;
+          }
+          if (m.type === "attributes") {
+            msg += ` ${m.attributeName}: "${m.oldValue}" → "${m.target.getAttribute(m.attributeName)}"`;
+          }
+          if (m.type === "characterData") {
+            msg += ` текст: "${m.oldValue}" → "${m.target.textContent}"`;
+          }
+          mutLog.unshift(msg);
+        }
+        document.getElementById("out-mut").textContent =
+          "MutationObserver лог:\n" + mutLog.slice(0, 10).join("\n");
+      });
 
-mutObserver.observe(document.getElementById("mutation-target"), {
-  childList: true,
-  subtree: true,
-  attributes: true,
-  attributeOldValue: true,
-  characterData: true,
-  characterDataOldValue: true,
-});
+      mutObserver.observe(document.getElementById("mutation-target"), {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeOldValue: true,
+        characterData: true,
+        characterDataOldValue: true,
+      });
 
-function mut_changeText() {
-  document.getElementById("mut-text").textContent = `Текст #${++mutCounter}`;
-}
+      function mut_changeText() {
+        document.getElementById("mut-text").textContent =
+          `Текст #${++mutCounter}`;
+      }
 
-function mut_addChild() {
-  const el = document.createElement("span");
-  el.textContent = ` [добавлен ${++mutCounter}]`;
-  el.style.color = "#3fb950";
-  document.getElementById("mutation-target").appendChild(el);
-}
+      function mut_addChild() {
+        const el = document.createElement("span");
+        el.textContent = ` [добавлен ${++mutCounter}]`;
+        el.style.color = "#3fb950";
+        document.getElementById("mutation-target").appendChild(el);
+      }
 
-function mut_changeAttr() {
-  const target = document.getElementById("mutation-target");
-  target.setAttribute("data-version", mutCounter++);
-  target.style.borderLeft = `3px solid #${Math.floor(Math.random()*16777215).toString(16).padStart(6,"0")}`;
-}
+      function mut_changeAttr() {
+        const target = document.getElementById("mutation-target");
+        target.setAttribute("data-version", mutCounter++);
+        target.style.borderLeft = `3px solid #${Math.floor(
+          Math.random() * 16777215,
+        )
+          .toString(16)
+          .padStart(6, "0")}`;
+      }
 
-function mut_removeChild() {
-  const target = document.getElementById("mutation-target");
-  const last = target.lastElementChild;
-  if (last) last.remove();
-}
+      function mut_removeChild() {
+        const target = document.getElementById("mutation-target");
+        const last = target.lastElementChild;
+        if (last) last.remove();
+      }
 
-function mut_disconnect() {
-  mutObserver.disconnect();
-  document.getElementById("out-mut").textContent += "\n\n[disconnect() — наблюдение остановлено]";
-}
+      function mut_disconnect() {
+        mutObserver.disconnect();
+        document.getElementById("out-mut").textContent +=
+          "\n\n[disconnect() — наблюдение остановлено]";
+      }
 
-// ─── ResizeObserver ─────────────────────
-const ro = new ResizeObserver((entries) => {
-  for (const entry of entries) {
-    const { width, height } = entry.contentRect;
-    const isCompact = width < 250;
-    entry.target.classList.toggle("compact", isCompact);
-    document.getElementById("out-ro").textContent = [
-      `contentRect: ${width.toFixed(0)}px × ${height.toFixed(0)}px`,
-      `borderBoxSize[0]: ${entry.borderBoxSize[0]?.inlineSize.toFixed(0)}px × ${entry.borderBoxSize[0]?.blockSize.toFixed(0)}px`,
-      ``,
-      isCompact
-        ? "⚠️ Компактный режим (< 250px) — красная рамка"
-        : "✅ Нормальный режим",
-      ``,
-      "ResizeObserver vs window.resize:`,
-      "  - Следит за конкретным элементом",
-      "  - Срабатывает при flexbox/grid перераспределении",
-      "  - Не зависит от размера окна",
-    ].join("\n");
-  }
-});
+      // ─── ResizeObserver ─────────────────────
+      const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect;
+          const isCompact = width < 250;
+          entry.target.classList.toggle("compact", isCompact);
+          document.getElementById("out-ro").textContent = [
+            `contentRect: ${width.toFixed(0)}px × ${height.toFixed(0)}px`,
+            `borderBoxSize[0]: ${entry.borderBoxSize[0]?.inlineSize.toFixed(0)}px × ${entry.borderBoxSize[0]?.blockSize.toFixed(0)}px`,
+            ``,
+            isCompact
+              ? "⚠️ Компактный режим (< 250px) — красная рамка"
+              : "✅ Нормальный режим",
+            ``,
+            "ResizeObserver vs window.resize",
+            "  - Следит за конкретным элементом",
+            "  - Срабатывает при flexbox/grid перераспределении",
+            "  - Не зависит от размера окна",
+          ].join("\n");
+        }
+      });
 
-ro.observe(document.getElementById("resizable"));
+      ro.observe(document.getElementById("resizable"));
 
-// ─── requestAnimationFrame ──────────────
-let rafId = null;
+      // ─── requestAnimationFrame ──────────────
+      let rafId = null;
 
-function startRAF() {
-  if (rafId) return;
-  const ball = document.getElementById("ball1");
-  const track = ball.parentElement;
-  let frameCount = 0;
-  let lastTs = 0;
+      function startRAF() {
+        if (rafId) return;
+        const ball = document.getElementById("ball1");
+        const track = ball.parentElement;
+        let frameCount = 0;
+        let lastTs = 0;
 
-  function frame(ts) {
-    const dt = ts - lastTs;
-    lastTs = ts;
+        function frame(ts) {
+          const dt = ts - lastTs;
+          lastTs = ts;
 
-    const maxX = track.offsetWidth - ball.offsetWidth;
-    const x = (Math.sin(ts / 600) + 1) / 2 * maxX;
-    ball.style.left = x + "px";
+          const maxX = track.offsetWidth - ball.offsetWidth;
+          const x = ((Math.sin(ts / 600) + 1) / 2) * maxX;
+          ball.style.left = x + "px";
 
-    // Цвет по позиции
-    const hue = (x / maxX * 180 + 200) | 0;
-    ball.style.background = `hsl(${hue}, 70%, 60%)`;
+          // Цвет по позиции
+          const hue = ((x / maxX) * 180 + 200) | 0;
+          ball.style.background = `hsl(${hue}, 70%, 60%)`;
 
-    frameCount++;
-    if (frameCount % 60 === 0) {
-      document.getElementById("out-raf").textContent =
-        `▶ Running | frame=${frameCount} | ts=${ts.toFixed(0)}ms\n` +
-        `dt (ms per frame): ${dt.toFixed(2)}ms\n` +
-        `fps (approx): ${(1000/dt).toFixed(0)}\n\n` +
-        `rAF vs setInterval:\n` +
-        `  - Синхронизирован с экраном (60/120 fps)\n` +
-        `  - Паузится на неактивных вкладках\n` +
-        `  - callback до рисования → изменения видны сразу`;
-    }
+          frameCount++;
+          if (frameCount % 60 === 0) {
+            document.getElementById("out-raf").textContent =
+              `▶ Running | frame=${frameCount} | ts=${ts.toFixed(0)}ms\n` +
+              `dt (ms per frame): ${dt.toFixed(2)}ms\n` +
+              `fps (approx): ${(1000 / dt).toFixed(0)}\n\n` +
+              `rAF vs setInterval:\n` +
+              `  - Синхронизирован с экраном (60/120 fps)\n` +
+              `  - Паузится на неактивных вкладках\n` +
+              `  - callback до рисования → изменения видны сразу`;
+          }
 
-    rafId = requestAnimationFrame(frame);
-  }
+          rafId = requestAnimationFrame(frame);
+        }
 
-  rafId = requestAnimationFrame(frame);
-}
+        rafId = requestAnimationFrame(frame);
+      }
 
-function stopRAF() {
-  if (rafId) {
-    cancelAnimationFrame(rafId);
-    rafId = null;
-    document.getElementById("out-raf").textContent = "■ Остановлено";
-  }
-}
+      function stopRAF() {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+          document.getElementById("out-raf").textContent = "■ Остановлено";
+        }
+      }
 
-// easeOutCubic анимация
-function animateBall2() {
-  const ball = document.getElementById("ball2");
-  const track = ball.parentElement;
-  const maxX = track.offsetWidth - ball.offsetWidth;
+      // easeOutCubic анимация
+      function animateBall2() {
+        const ball = document.getElementById("ball2");
+        const track = ball.parentElement;
+        const maxX = track.offsetWidth - ball.offsetWidth;
 
-  const currentX = parseFloat(ball.style.left) || 0;
-  const targetX = currentX < maxX / 2 ? maxX : 0;
+        const currentX = parseFloat(ball.style.left) || 0;
+        const targetX = currentX < maxX / 2 ? maxX : 0;
 
-  const start = performance.now();
-  const duration = 600;
-  const startX = currentX;
+        const start = performance.now();
+        const duration = 600;
+        const startX = currentX;
 
-  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+        function easeOutCubic(t) {
+          return 1 - Math.pow(1 - t, 3);
+        }
 
-  function frame(now) {
-    const elapsed = now - start;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = easeOutCubic(progress);
-    ball.style.left = (startX + (targetX - startX) * eased) + "px";
-    if (progress < 1) requestAnimationFrame(frame);
-    else document.getElementById("out-raf").textContent =
-      `easeOutCubic: ${startX.toFixed(0)}px → ${targetX.toFixed(0)}px за ${duration}ms`;
-  }
+        function frame(now) {
+          const elapsed = now - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = easeOutCubic(progress);
+          ball.style.left = startX + (targetX - startX) * eased + "px";
+          if (progress < 1) requestAnimationFrame(frame);
+          else
+            document.getElementById("out-raf").textContent =
+              `easeOutCubic: ${startX.toFixed(0)}px → ${targetX.toFixed(0)}px за ${duration}ms`;
+        }
 
-  requestAnimationFrame(frame);
-}
+        requestAnimationFrame(frame);
+      }
 
-// ─── PerformanceObserver ────────────────
-function showPerfMetrics() {
-  const nav = performance.getEntriesByType("navigation")[0];
-  const lines = ["=== Navigation Timing ==="];
-  if (nav) {
-    lines.push(`DNS lookup:     ${(nav.domainLookupEnd - nav.domainLookupStart).toFixed(1)}ms`);
-    lines.push(`TCP connect:    ${(nav.connectEnd - nav.connectStart).toFixed(1)}ms`);
-    lines.push(`TTFB:           ${(nav.responseStart - nav.requestStart).toFixed(1)}ms`);
-    lines.push(`DOM parse:      ${(nav.domInteractive - nav.responseEnd).toFixed(1)}ms`);
-    lines.push(`DOMContentLoaded: ${(nav.domContentLoadedEventEnd - nav.fetchStart).toFixed(1)}ms`);
-    lines.push(`Total load:     ${(nav.loadEventEnd - nav.fetchStart).toFixed(1)}ms`);
-  }
+      // ─── PerformanceObserver ────────────────
+      function showPerfMetrics() {
+        const nav = performance.getEntriesByType("navigation")[0];
+        const lines = ["=== Navigation Timing ==="];
+        if (nav) {
+          lines.push(
+            `DNS lookup:     ${(nav.domainLookupEnd - nav.domainLookupStart).toFixed(1)}ms`,
+          );
+          lines.push(
+            `TCP connect:    ${(nav.connectEnd - nav.connectStart).toFixed(1)}ms`,
+          );
+          lines.push(
+            `TTFB:           ${(nav.responseStart - nav.requestStart).toFixed(1)}ms`,
+          );
+          lines.push(
+            `DOM parse:      ${(nav.domInteractive - nav.responseEnd).toFixed(1)}ms`,
+          );
+          lines.push(
+            `DOMContentLoaded: ${(nav.domContentLoadedEventEnd - nav.fetchStart).toFixed(1)}ms`,
+          );
+          lines.push(
+            `Total load:     ${(nav.loadEventEnd - nav.fetchStart).toFixed(1)}ms`,
+          );
+        }
 
-  lines.push("\n=== Resources ===");
-  const resources = performance.getEntriesByType("resource").slice(0, 5);
-  for (const r of resources) {
-    lines.push(`${r.initiatorType.padEnd(6)} ${r.duration.toFixed(0).padStart(5)}ms  ${r.name.split("/").pop().slice(0, 40)}`);
-  }
+        lines.push("\n=== Resources ===");
+        const resources = performance.getEntriesByType("resource").slice(0, 5);
+        for (const r of resources) {
+          lines.push(
+            `${r.initiatorType.padEnd(6)} ${r.duration.toFixed(0).padStart(5)}ms  ${r.name.split("/").pop().slice(0, 40)}`,
+          );
+        }
 
-  lines.push("\n=== Paint ===");
-  for (const p of performance.getEntriesByType("paint")) {
-    lines.push(`${p.name}: ${p.startTime.toFixed(1)}ms`);
-  }
+        lines.push("\n=== Paint ===");
+        for (const p of performance.getEntriesByType("paint")) {
+          lines.push(`${p.name}: ${p.startTime.toFixed(1)}ms`);
+        }
 
-  document.getElementById("out-perf").textContent = lines.join("\n");
-}
+        document.getElementById("out-perf").textContent = lines.join("\n");
+      }
 
-const longTaskLog = [];
-try {
-  new PerformanceObserver((list) => {
-    list.getEntries().forEach(entry => {
-      longTaskLog.unshift(`Long task: ${entry.duration.toFixed(0)}ms`);
-    });
-  }).observe({ type: "longtask", buffered: true });
-} catch(e) {} // не все браузеры поддерживают
+      const longTaskLog = [];
+      try {
+        new PerformanceObserver((list) => {
+          list.getEntries().forEach((entry) => {
+            longTaskLog.unshift(`Long task: ${entry.duration.toFixed(0)}ms`);
+          });
+        }).observe({ type: "longtask", buffered: true });
+      } catch (e) {} // не все браузеры поддерживают
 
-function simulateLongTask() {
-  const t = performance.now();
-  // Блокируем main thread
-  let x = 0;
-  while (performance.now() - t < 100) {
-    x += Math.random();
-  }
-  const actual = performance.now() - t;
+      function simulateLongTask() {
+        const t = performance.now();
+        // Блокируем main thread
+        let x = 0;
+        while (performance.now() - t < 100) {
+          x += Math.random();
+        }
+        const actual = performance.now() - t;
 
-  longTaskLog.unshift(`Задача выполнена за ${actual.toFixed(0)}ms (> 50ms = Long Task)`);
-  document.getElementById("out-perf").textContent =
-    "=== Long Tasks ===\n" + longTaskLog.slice(0, 8).join("\n") +
-    "\n\nLong Task > 50ms блокирует main thread:\n" +
-    "  - Нет отклика на ввод\n" +
-    "  - Пропущенные кадры (jank)\n" +
-    "  - Плохой INP (Interaction to Next Paint)";
-}
-</script>
-</body>
+        longTaskLog.unshift(
+          `Задача выполнена за ${actual.toFixed(0)}ms (> 50ms = Long Task)`,
+        );
+        document.getElementById("out-perf").textContent =
+          "=== Long Tasks ===\n" +
+          longTaskLog.slice(0, 8).join("\n") +
+          "\n\nLong Task > 50ms блокирует main thread:\n" +
+          "  - Нет отклика на ввод\n" +
+          "  - Пропущенные кадры (jank)\n" +
+          "  - Плохой INP (Interaction to Next Paint)";
+      }
+    </script>
+  </body>
 </html>

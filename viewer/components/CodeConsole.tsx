@@ -92,10 +92,11 @@ function buildJSSandbox(code: string): string {
     _send('error', ['UnhandledPromiseRejection: ' + (reason && reason.message ? reason.message : String(reason))]);
   });
 
-  // Выполняем код
+  // (0,eval) = indirect eval — код выполняется в глобальном scope (window),
+  // поэтому объявленные функции доступны из onclick / event handlers
   try {
     var code = decodeURIComponent(escape(atob('${encoded}')));
-    eval(code);
+    (0,eval)(code);
   } catch(e) {
     _send('error', [e.stack || e.message || String(e)]);
   }

@@ -1,602 +1,804 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>Canvas 2D</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: monospace; padding: 20px; background: #0d1117; color: #c9d1d9; }
-    .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
-    button { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 3px; font-family: monospace; }
-    button.red  { background: #b91c1c; }
-    button.blue { background: #1d4ed8; }
-    button.amber { background: #92400e; }
-    output { display: block; background: #010409; padding: 10px; border-radius: 6px; margin-top: 8px; white-space: pre-wrap; font-size: 12px; min-height: 30px; }
-    canvas { display: block; border-radius: 6px; margin: 8px 0; cursor: crosshair; }
-    h2 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 0; }
-    input[type=range] { width: 150px; vertical-align: middle; }
-    label { color: #8b949e; font-size: 13px; margin-right: 12px; }
-  </style>
-</head>
-<body>
-<h1>Canvas 2D — интерактивный справочник</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Canvas 2D</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: monospace;
+        padding: 20px;
+        background: #0d1117;
+        color: #c9d1d9;
+      }
+      .box {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 12px 0;
+        overflow: hidden;
+      }
+      button {
+        background: #238636;
+        color: white;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 3px;
+        font-family: monospace;
+      }
+      button.red {
+        background: #b91c1c;
+      }
+      button.blue {
+        background: #1d4ed8;
+      }
+      button.amber {
+        background: #92400e;
+      }
+      output {
+        display: block;
+        background: #010409;
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 8px;
+        white-space: pre-wrap;
+        font-size: 12px;
+        min-height: 30px;
+      }
+      canvas {
+        display: block;
+        border-radius: 6px;
+        margin: 8px 0;
+        cursor: crosshair;
+      }
+      h2 {
+        color: #f0f6fc;
+        border-bottom: 1px solid #30363d;
+        padding-bottom: 8px;
+        margin-top: 0;
+      }
+      input[type="range"] {
+        width: 150px;
+        vertical-align: middle;
+      }
+      label {
+        color: #8b949e;
+        font-size: 13px;
+        margin-right: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Canvas 2D — интерактивный справочник</h1>
 
-<!-- ─── Примитивы ─────────────────────── -->
-<div class="box">
-  <h2>Примитивы — пути, дуги, кривые Безье</h2>
-  <canvas id="c-primitives" width="700" height="200" style="background:#0d1117"></canvas>
-  <button onclick="draw_primitives()">Нарисовать</button>
-  <button class="red" onclick="clear_canvas('c-primitives')">Очистить</button>
-</div>
-
-<!-- ─── Градиенты и стили ─────────────── -->
-<div class="box">
-  <h2>Градиенты, паттерны, тени</h2>
-  <canvas id="c-styles" width="700" height="200" style="background:#0d1117"></canvas>
-  <button onclick="draw_styles()">Нарисовать</button>
-</div>
-
-<!-- ─── Текст ────────────────────────── -->
-<div class="box">
-  <h2>Текст и измерения</h2>
-  <input id="canvas-text-input" value="Hello Canvas!" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:6px;border-radius:4px;width:200px;font-family:monospace">
-  <select id="canvas-font-select" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:6px;border-radius:4px">
-    <option value="bold 32px Arial">Arial 32px bold</option>
-    <option value="italic 28px Georgia">Georgia 28px italic</option>
-    <option value="600 24px monospace">Monospace 24px</option>
-  </select>
-  <button onclick="draw_text()">Нарисовать</button>
-  <canvas id="c-text" width="700" height="120" style="background:#0d1117"></canvas>
-  <output id="out-text"></output>
-</div>
-
-<!-- ─── Трансформации ─────────────────── -->
-<div class="box">
-  <h2>Трансформации: translate / rotate / scale</h2>
-  <canvas id="c-transform" width="700" height="250" style="background:#0d1117"></canvas>
-  <button onclick="draw_transforms()">Нарисовать</button>
-  <button onclick="animate_transform()">Анимировать ↺</button>
-  <button class="red" onclick="stop_transform()">Стоп</button>
-</div>
-
-<!-- ─── Анимация ─────────────────────── -->
-<div class="box">
-  <h2>Game Loop — bouncing balls</h2>
-  <canvas id="c-game" width="700" height="280" style="background:#0d1117"></canvas>
-  <br>
-  <button onclick="gameStart()">▶ Start</button>
-  <button class="red" onclick="gameStop()">■ Stop</button>
-  <label><input type="range" id="ball-count" min="1" max="100" value="15"> Мячей: <span id="ball-count-label">15</span></label>
-  <output id="out-game">Нажми Start</output>
-</div>
-
-<!-- ─── Pixel Manipulation ───────────── -->
-<div class="box">
-  <h2>Pixel Manipulation — ImageData</h2>
-  <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
-    <div>
-      <div style="color:#8b949e;font-size:11px;margin-bottom:4px">Оригинал</div>
-      <canvas id="c-pixel-src" width="200" height="150" style="background:#0d1117"></canvas>
+    <!-- ─── Примитивы ─────────────────────── -->
+    <div class="box">
+      <h2>Примитивы — пути, дуги, кривые Безье</h2>
+      <canvas
+        id="c-primitives"
+        width="700"
+        height="200"
+        style="background: #0d1117"
+      ></canvas>
+      <button onclick="draw_primitives()">Нарисовать</button>
+      <button class="red" onclick="clear_canvas('c-primitives')">
+        Очистить
+      </button>
     </div>
-    <div>
-      <div style="color:#8b949e;font-size:11px;margin-bottom:4px">Обработанный</div>
-      <canvas id="c-pixel-dst" width="200" height="150" style="background:#0d1117"></canvas>
+
+    <!-- ─── Градиенты и стили ─────────────── -->
+    <div class="box">
+      <h2>Градиенты, паттерны, тени</h2>
+      <canvas
+        id="c-styles"
+        width="700"
+        height="200"
+        style="background: #0d1117"
+      ></canvas>
+      <button onclick="draw_styles()">Нарисовать</button>
     </div>
-  </div>
-  <br>
-  <button onclick="pixel_drawSource()">1. Нарисовать источник</button>
-  <button onclick="pixel_filter('grayscale')">Grayscale</button>
-  <button onclick="pixel_filter('invert')">Invert</button>
-  <button onclick="pixel_filter('sepia')">Sepia</button>
-  <button onclick="pixel_filter('pixelate')">Pixelate</button>
-  <output id="out-pixel"></output>
-</div>
 
-<!-- ─── Интерактивный Drawing ─────────── -->
-<div class="box">
-  <h2>Рисование — pointer events на Canvas</h2>
-  <canvas id="c-draw" width="700" height="200" style="background:#21262d;cursor:crosshair"></canvas>
-  <br>
-  <label>Цвет: <input type="color" id="draw-color" value="#3b82f6"></label>
-  <label>Размер: <input type="range" id="draw-size" min="1" max="30" value="5"> <span id="draw-size-label">5</span>px</label>
-  <button class="red" onclick="clear_canvas('c-draw', '#21262d')">Очистить</button>
-  <output id="out-draw">Рисуй мышью / пальцем</output>
-</div>
+    <!-- ─── Текст ────────────────────────── -->
+    <div class="box">
+      <h2>Текст и измерения</h2>
+      <input
+        id="canvas-text-input"
+        value="Hello Canvas!"
+        style="
+          background: #21262d;
+          color: #c9d1d9;
+          border: 1px solid #30363d;
+          padding: 6px;
+          border-radius: 4px;
+          width: 200px;
+          font-family: monospace;
+        "
+      />
+      <select
+        id="canvas-font-select"
+        style="
+          background: #21262d;
+          color: #c9d1d9;
+          border: 1px solid #30363d;
+          padding: 6px;
+          border-radius: 4px;
+        "
+      >
+        <option value="bold 32px Arial">Arial 32px bold</option>
+        <option value="italic 28px Georgia">Georgia 28px italic</option>
+        <option value="600 24px monospace">Monospace 24px</option>
+      </select>
+      <button onclick="draw_text()">Нарисовать</button>
+      <canvas
+        id="c-text"
+        width="700"
+        height="120"
+        style="background: #0d1117"
+      ></canvas>
+      <output id="out-text"></output>
+    </div>
 
-<script>
-function clear_canvas(id, color = "#0d1117") {
-  const c = document.getElementById(id);
-  const ctx = c.getContext("2d");
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, c.width, c.height);
-}
+    <!-- ─── Трансформации ─────────────────── -->
+    <div class="box">
+      <h2>Трансформации: translate / rotate / scale</h2>
+      <canvas
+        id="c-transform"
+        width="700"
+        height="250"
+        style="background: #0d1117"
+      ></canvas>
+      <button onclick="draw_transforms()">Нарисовать</button>
+      <button onclick="animate_transform()">Анимировать ↺</button>
+      <button class="red" onclick="stop_transform()">Стоп</button>
+    </div>
 
-// ─── Примитивы ──────────────────────────
-function draw_primitives() {
-  const ctx = document.getElementById("c-primitives").getContext("2d");
-  ctx.clearRect(0, 0, 700, 200);
+    <!-- ─── Анимация ─────────────────────── -->
+    <div class="box">
+      <h2>Game Loop — bouncing balls</h2>
+      <canvas
+        id="c-game"
+        width="700"
+        height="280"
+        style="background: #0d1117"
+      ></canvas>
+      <br />
+      <button onclick="gameStart()">▶ Start</button>
+      <button class="red" onclick="gameStop()">■ Stop</button>
+      <label
+        ><input type="range" id="ball-count" min="1" max="100" value="15" />
+        Мячей: <span id="ball-count-label">15</span></label
+      >
+      <output id="out-game">Нажми Start</output>
+    </div>
 
-  // Прямоугольники
-  ctx.fillStyle = "#3b82f6";
-  ctx.fillRect(20, 20, 80, 60);
-  ctx.strokeStyle = "#f97316";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(120, 20, 80, 60);
+    <!-- ─── Pixel Manipulation ───────────── -->
+    <div class="box">
+      <h2>Pixel Manipulation — ImageData</h2>
+      <div
+        style="
+          display: flex;
+          gap: 12px;
+          align-items: flex-start;
+          flex-wrap: wrap;
+        "
+      >
+        <div>
+          <div style="color: #8b949e; font-size: 11px; margin-bottom: 4px">
+            Оригинал
+          </div>
+          <canvas
+            id="c-pixel-src"
+            width="200"
+            height="150"
+            style="background: #0d1117"
+          ></canvas>
+        </div>
+        <div>
+          <div style="color: #8b949e; font-size: 11px; margin-bottom: 4px">
+            Обработанный
+          </div>
+          <canvas
+            id="c-pixel-dst"
+            width="200"
+            height="150"
+            style="background: #0d1117"
+          ></canvas>
+        </div>
+      </div>
+      <br />
+      <button onclick="pixel_drawSource()">1. Нарисовать источник</button>
+      <button onclick="pixel_filter('grayscale')">Grayscale</button>
+      <button onclick="pixel_filter('invert')">Invert</button>
+      <button onclick="pixel_filter('sepia')">Sepia</button>
+      <button onclick="pixel_filter('pixelate')">Pixelate</button>
+      <output id="out-pixel"></output>
+    </div>
 
-  // Путь (треугольник)
-  ctx.beginPath();
-  ctx.moveTo(240, 80);
-  ctx.lineTo(280, 20);
-  ctx.lineTo(320, 80);
-  ctx.closePath();
-  ctx.fillStyle = "#22c55e";
-  ctx.fill();
-  ctx.strokeStyle = "#86efac";
-  ctx.lineWidth = 2;
-  ctx.stroke();
+    <!-- ─── Интерактивный Drawing ─────────── -->
+    <div class="box">
+      <h2>Рисование — pointer events на Canvas</h2>
+      <canvas
+        id="c-draw"
+        width="700"
+        height="200"
+        style="background: #21262d; cursor: crosshair"
+      ></canvas>
+      <br />
+      <label
+        >Цвет: <input type="color" id="draw-color" value="#3b82f6"
+      /></label>
+      <label
+        >Размер:
+        <input type="range" id="draw-size" min="1" max="30" value="5" />
+        <span id="draw-size-label">5</span>px</label
+      >
+      <button class="red" onclick="clear_canvas('c-draw', '#21262d')">
+        Очистить
+      </button>
+      <output id="out-draw">Рисуй мышью / пальцем</output>
+    </div>
 
-  // Окружность
-  ctx.beginPath();
-  ctx.arc(400, 50, 40, 0, Math.PI * 2);
-  ctx.fillStyle = "#a855f7";
-  ctx.fill();
-
-  // Полуокружность
-  ctx.beginPath();
-  ctx.arc(500, 80, 40, 0, Math.PI);
-  ctx.strokeStyle = "#f59e0b";
-  ctx.lineWidth = 4;
-  ctx.stroke();
-
-  // Кривая Безье (квадратичная)
-  ctx.beginPath();
-  ctx.moveTo(560, 80);
-  ctx.quadraticCurveTo(610, 10, 660, 80);
-  ctx.strokeStyle = "#ec4899";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  // Контрольная точка
-  ctx.beginPath();
-  ctx.arc(610, 10, 4, 0, Math.PI * 2);
-  ctx.fillStyle = "#ec4899";
-  ctx.fill();
-
-  // Пунктирная линия
-  ctx.setLineDash([8, 5]);
-  ctx.beginPath();
-  ctx.moveTo(20, 130);
-  ctx.lineTo(680, 130);
-  ctx.strokeStyle = "#8b949e";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Star Path2D
-  const star = new Path2D();
-  const cx = 80, cy = 170, r = 25;
-  for (let i = 0; i < 5; i++) {
-    const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
-    const x = cx + r * Math.cos(angle);
-    const y = cy + r * Math.sin(angle);
-    if (i === 0) star.moveTo(x, y); else star.lineTo(x, y);
-  }
-  star.closePath();
-  ctx.fillStyle = "#fbbf24";
-  ctx.fill(star);
-
-  // Rounded rect
-  ctx.beginPath();
-  ctx.roundRect(160, 140, 100, 40, 12);
-  ctx.fillStyle = "#0ea5e9";
-  ctx.fill();
-  ctx.fillStyle = "white";
-  ctx.font = "bold 14px monospace";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("roundRect", 210, 160);
-}
-
-// ─── Стили ──────────────────────────────
-function draw_styles() {
-  const ctx = document.getElementById("c-styles").getContext("2d");
-  ctx.clearRect(0, 0, 700, 200);
-
-  // Линейный градиент
-  const lg = ctx.createLinearGradient(20, 0, 150, 0);
-  lg.addColorStop(0, "#7c3aed");
-  lg.addColorStop(0.5, "#2563eb");
-  lg.addColorStop(1, "#0891b2");
-  ctx.fillStyle = lg;
-  ctx.fillRect(20, 20, 130, 80);
-  ctx.fillStyle = "white";
-  ctx.font = "12px monospace";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "bottom";
-  ctx.fillText("Linear Gradient", 85, 112);
-
-  // Радиальный градиент
-  const rg = ctx.createRadialGradient(240, 60, 0, 240, 60, 50);
-  rg.addColorStop(0, "white");
-  rg.addColorStop(0.4, "#f97316");
-  rg.addColorStop(1, "rgba(234,88,12,0)");
-  ctx.fillStyle = rg;
-  ctx.beginPath();
-  ctx.arc(240, 60, 50, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "white";
-  ctx.fillText("Radial", 240, 120);
-
-  // Тень
-  ctx.shadowColor = "rgba(59,130,246,0.8)";
-  ctx.shadowBlur = 20;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
-  ctx.fillStyle = "#3b82f6";
-  ctx.beginPath();
-  ctx.arc(360, 60, 40, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowColor = "transparent";
-  ctx.fillStyle = "white";
-  ctx.fillText("Shadow", 360, 120);
-
-  // globalCompositeOperation
-  const ops = [
-    ["source-over", 470, 60],
-    ["xor", 560, 60],
-    ["multiply", 650, 60],
-  ];
-  for (const [op, x, y] of ops) {
-    ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "#3b82f6";
-    ctx.fillRect(x - 30, y - 20, 40, 40);
-    ctx.globalCompositeOperation = op;
-    ctx.fillStyle = "#f97316";
-    ctx.fillRect(x - 10, y - 10, 40, 40);
-    ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "white";
-    ctx.fillText(op, x + 10, y + 45);
-  }
-
-  // globalAlpha
-  ctx.globalAlpha = 0.3;
-  ctx.fillStyle = "#22c55e";
-  ctx.fillRect(430, 140, 60, 40);
-  ctx.globalAlpha = 0.7;
-  ctx.fillRect(460, 150, 60, 40);
-  ctx.globalAlpha = 1;
-  ctx.fillRect(490, 160, 60, 40);
-  ctx.fillStyle = "white";
-  ctx.fillText("alpha", 490, 195);
-}
-
-// ─── Текст ──────────────────────────────
-function draw_text() {
-  const canvas = document.getElementById("c-text");
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#0d1117";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const text = document.getElementById("canvas-text-input").value;
-  const font = document.getElementById("canvas-font-select").value;
-
-  // Baseline guide
-  ctx.strokeStyle = "#30363d";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, 60); ctx.lineTo(canvas.width, 60);
-  ctx.stroke();
-
-  // Text
-  ctx.font = font;
-  ctx.fillStyle = "#3b82f6";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillText(text, 20, 60);
-
-  // Stroke text
-  ctx.strokeStyle = "#f97316";
-  ctx.lineWidth = 1.5;
-  ctx.strokeText(text, 20, 100);
-
-  // Metrics
-  const m = ctx.measureText(text);
-  document.getElementById("out-text").textContent = [
-    `font: "${font}"`,
-    `text: "${text}"`,
-    `width: ${m.width.toFixed(1)}px`,
-    `actualBoundingBoxAscent: ${m.actualBoundingBoxAscent?.toFixed(1)}px`,
-    `actualBoundingBoxDescent: ${m.actualBoundingBoxDescent?.toFixed(1)}px`,
-  ].join("\n");
-}
-
-// ─── Трансформации ──────────────────────
-let transformRafId = null;
-
-function draw_transforms() {
-  const ctx = document.getElementById("c-transform").getContext("2d");
-  ctx.clearRect(0, 0, 700, 250);
-  ctx.fillStyle = "#0d1117";
-  ctx.fillRect(0, 0, 700, 250);
-
-  // translate + rotate
-  for (let i = 0; i < 8; i++) {
-    ctx.save();
-    ctx.translate(80 + i * 80, 125);
-    ctx.rotate((i * Math.PI) / 8);
-    ctx.fillStyle = `hsl(${i * 45}, 70%, 60%)`;
-    ctx.fillRect(-25, -25, 50, 50);
-    ctx.restore();
-  }
-
-  // scale
-  ctx.save();
-  ctx.translate(60, 210);
-  ctx.scale(1.5, 0.7);
-  ctx.fillStyle = "#3b82f6";
-  ctx.fillRect(-30, -20, 60, 40);
-  ctx.restore();
-}
-
-function animate_transform() {
-  if (transformRafId) return;
-  const ctx = document.getElementById("c-transform").getContext("2d");
-  let angle = 0;
-
-  function frame() {
-    ctx.clearRect(0, 0, 700, 250);
-    ctx.fillStyle = "#0d1117";
-    ctx.fillRect(0, 0, 700, 250);
-
-    // Вращающиеся прямоугольники
-    for (let i = 0; i < 8; i++) {
-      ctx.save();
-      ctx.translate(80 + i * 80, 125);
-      ctx.rotate(angle + (i * Math.PI) / 4);
-      const hue = (i * 45 + angle * 30) % 360;
-      ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
-      ctx.fillRect(-20, -20, 40, 40);
-      ctx.restore();
-    }
-
-    angle += 0.02;
-    transformRafId = requestAnimationFrame(frame);
-  }
-
-  transformRafId = requestAnimationFrame(frame);
-}
-
-function stop_transform() {
-  if (transformRafId) {
-    cancelAnimationFrame(transformRafId);
-    transformRafId = null;
-  }
-}
-
-// ─── Game Loop ──────────────────────────
-let gameRafId = null;
-let balls = [];
-
-function createBalls(n, w, h) {
-  return Array.from({ length: n }, () => ({
-    x: Math.random() * w,
-    y: Math.random() * h,
-    vx: (Math.random() - 0.5) * 6,
-    vy: (Math.random() - 0.5) * 6,
-    r: 8 + Math.random() * 16,
-    color: `hsl(${Math.random() * 360}, 70%, 60%)`,
-    trail: [],
-  }));
-}
-
-function gameStart() {
-  if (gameRafId) cancelAnimationFrame(gameRafId);
-  const canvas = document.getElementById("c-game");
-  const ctx = canvas.getContext("2d");
-  const W = canvas.width, H = canvas.height;
-  const n = parseInt(document.getElementById("ball-count").value);
-  balls = createBalls(n, W, H);
-
-  let lastTs = 0, frames = 0, fps = 0, fpsTimer = 0;
-
-  function loop(ts) {
-    const dt = Math.min((ts - lastTs) / 1000, 0.05);
-    lastTs = ts;
-    frames++;
-    fpsTimer += dt;
-    if (fpsTimer >= 0.5) {
-      fps = Math.round(frames / fpsTimer);
-      frames = 0; fpsTimer = 0;
-    }
-
-    // Clear
-    ctx.fillStyle = "#0d1117";
-    ctx.fillRect(0, 0, W, H);
-
-    // Update & draw
-    for (const b of balls) {
-      b.x += b.vx * dt * 60;
-      b.y += b.vy * dt * 60;
-      if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); }
-      if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); }
-      if (b.y < b.r) { b.y = b.r; b.vy = Math.abs(b.vy); }
-      if (b.y > H - b.r) { b.y = H - b.r; b.vy = -Math.abs(b.vy); }
-
-      // Trail
-      b.trail.push({ x: b.x, y: b.y });
-      if (b.trail.length > 8) b.trail.shift();
-      if (b.trail.length > 1) {
-        ctx.beginPath();
-        ctx.moveTo(b.trail[0].x, b.trail[0].y);
-        b.trail.forEach(p => ctx.lineTo(p.x, p.y));
-        ctx.strokeStyle = b.color + "44";
-        ctx.lineWidth = b.r / 2;
-        ctx.lineCap = "round";
-        ctx.stroke();
+    <script>
+      function clear_canvas(id, color = "#0d1117") {
+        const c = document.getElementById(id);
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, c.width, c.height);
       }
 
-      // Ball
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-      const grad = ctx.createRadialGradient(b.x - b.r*0.3, b.y - b.r*0.3, 0, b.x, b.y, b.r);
-      grad.addColorStop(0, "white");
-      grad.addColorStop(0.3, b.color);
-      grad.addColorStop(1, b.color + "88");
-      ctx.fillStyle = grad;
-      ctx.fill();
-    }
+      // ─── Примитивы ──────────────────────────
+      function draw_primitives() {
+        const ctx = document.getElementById("c-primitives").getContext("2d");
+        ctx.clearRect(0, 0, 700, 200);
 
-    // HUD
-    ctx.fillStyle = "#8b949e";
-    ctx.font = "12px monospace";
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    ctx.fillText(`FPS: ${fps} | Balls: ${balls.length} | dt: ${(dt*1000).toFixed(1)}ms`, 8, 8);
+        // Прямоугольники
+        ctx.fillStyle = "#3b82f6";
+        ctx.fillRect(20, 20, 80, 60);
+        ctx.strokeStyle = "#f97316";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(120, 20, 80, 60);
 
-    gameRafId = requestAnimationFrame(loop);
-  }
+        // Путь (треугольник)
+        ctx.beginPath();
+        ctx.moveTo(240, 80);
+        ctx.lineTo(280, 20);
+        ctx.lineTo(320, 80);
+        ctx.closePath();
+        ctx.fillStyle = "#22c55e";
+        ctx.fill();
+        ctx.strokeStyle = "#86efac";
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
-  lastTs = performance.now();
-  gameRafId = requestAnimationFrame(loop);
-  document.getElementById("out-game").textContent = `▶ Running | ${n} balls | frame-rate independent (dt)`;
-}
+        // Окружность
+        ctx.beginPath();
+        ctx.arc(400, 50, 40, 0, Math.PI * 2);
+        ctx.fillStyle = "#a855f7";
+        ctx.fill();
 
-function gameStop() {
-  if (gameRafId) { cancelAnimationFrame(gameRafId); gameRafId = null; }
-  document.getElementById("out-game").textContent = "■ Остановлено";
-}
+        // Полуокружность
+        ctx.beginPath();
+        ctx.arc(500, 80, 40, 0, Math.PI);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 4;
+        ctx.stroke();
 
-document.getElementById("ball-count").addEventListener("input", (e) => {
-  document.getElementById("ball-count-label").textContent = e.target.value;
-});
+        // Кривая Безье (квадратичная)
+        ctx.beginPath();
+        ctx.moveTo(560, 80);
+        ctx.quadraticCurveTo(610, 10, 660, 80);
+        ctx.strokeStyle = "#ec4899";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        // Контрольная точка
+        ctx.beginPath();
+        ctx.arc(610, 10, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#ec4899";
+        ctx.fill();
 
-// ─── Pixel Manipulation ─────────────────
-function pixel_drawSource() {
-  const ctx = document.getElementById("c-pixel-src").getContext("2d");
-  ctx.clearRect(0, 0, 200, 150);
+        // Пунктирная линия
+        ctx.setLineDash([8, 5]);
+        ctx.beginPath();
+        ctx.moveTo(20, 130);
+        ctx.lineTo(680, 130);
+        ctx.strokeStyle = "#8b949e";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.setLineDash([]);
 
-  // Рисуем красивую картинку
-  const lg = ctx.createLinearGradient(0, 0, 200, 150);
-  lg.addColorStop(0, "#7c3aed"); lg.addColorStop(1, "#0891b2");
-  ctx.fillStyle = lg;
-  ctx.fillRect(0, 0, 200, 150);
+        // Star Path2D
+        const star = new Path2D();
+        const cx = 80,
+          cy = 170,
+          r = 25;
+        for (let i = 0; i < 5; i++) {
+          const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+          const x = cx + r * Math.cos(angle);
+          const y = cy + r * Math.sin(angle);
+          if (i === 0) star.moveTo(x, y);
+          else star.lineTo(x, y);
+        }
+        star.closePath();
+        ctx.fillStyle = "#fbbf24";
+        ctx.fill(star);
 
-  ctx.fillStyle = "#fbbf24";
-  ctx.beginPath();
-  ctx.arc(70, 60, 35, 0, Math.PI * 2);
-  ctx.fill();
+        // Rounded rect
+        ctx.beginPath();
+        ctx.roundRect(160, 140, 100, 40, 12);
+        ctx.fillStyle = "#0ea5e9";
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("roundRect", 210, 160);
+      }
 
-  ctx.fillStyle = "#22c55e";
-  ctx.fillRect(110, 40, 60, 60);
+      // ─── Стили ──────────────────────────────
+      function draw_styles() {
+        const ctx = document.getElementById("c-styles").getContext("2d");
+        ctx.clearRect(0, 0, 700, 200);
 
-  ctx.fillStyle = "rgba(255,255,255,0.8)";
-  ctx.font = "bold 14px monospace";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "bottom";
-  ctx.fillText("Source", 100, 148);
+        // Линейный градиент
+        const lg = ctx.createLinearGradient(20, 0, 150, 0);
+        lg.addColorStop(0, "#7c3aed");
+        lg.addColorStop(0.5, "#2563eb");
+        lg.addColorStop(1, "#0891b2");
+        ctx.fillStyle = lg;
+        ctx.fillRect(20, 20, 130, 80);
+        ctx.fillStyle = "white";
+        ctx.font = "12px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText("Linear Gradient", 85, 112);
 
-  document.getElementById("out-pixel").textContent = "Источник нарисован. Выбери фильтр.";
-}
+        // Радиальный градиент
+        const rg = ctx.createRadialGradient(240, 60, 0, 240, 60, 50);
+        rg.addColorStop(0, "white");
+        rg.addColorStop(0.4, "#f97316");
+        rg.addColorStop(1, "rgba(234,88,12,0)");
+        ctx.fillStyle = rg;
+        ctx.beginPath();
+        ctx.arc(240, 60, 50, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.fillText("Radial", 240, 120);
 
-function pixel_filter(type) {
-  const src = document.getElementById("c-pixel-src");
-  const dst = document.getElementById("c-pixel-dst");
-  const dstCtx = dst.getContext("2d");
+        // Тень
+        ctx.shadowColor = "rgba(59,130,246,0.8)";
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.fillStyle = "#3b82f6";
+        ctx.beginPath();
+        ctx.arc(360, 60, 40, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.fillStyle = "white";
+        ctx.fillText("Shadow", 360, 120);
 
-  const srcCtx = src.getContext("2d");
-  const { data, width, height } = srcCtx.getImageData(0, 0, src.width, src.height);
-  const out = new Uint8ClampedArray(data);
+        // globalCompositeOperation
+        const ops = [
+          ["source-over", 470, 60],
+          ["xor", 560, 60],
+          ["multiply", 650, 60],
+        ];
+        for (const [op, x, y] of ops) {
+          ctx.globalCompositeOperation = "source-over";
+          ctx.fillStyle = "#3b82f6";
+          ctx.fillRect(x - 30, y - 20, 40, 40);
+          ctx.globalCompositeOperation = op;
+          ctx.fillStyle = "#f97316";
+          ctx.fillRect(x - 10, y - 10, 40, 40);
+          ctx.globalCompositeOperation = "source-over";
+          ctx.fillStyle = "white";
+          ctx.fillText(op, x + 10, y + 45);
+        }
 
-  const t = performance.now();
+        // globalAlpha
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = "#22c55e";
+        ctx.fillRect(430, 140, 60, 40);
+        ctx.globalAlpha = 0.7;
+        ctx.fillRect(460, 150, 60, 40);
+        ctx.globalAlpha = 1;
+        ctx.fillRect(490, 160, 60, 40);
+        ctx.fillStyle = "white";
+        ctx.fillText("alpha", 490, 195);
+      }
 
-  if (type === "grayscale") {
-    for (let i = 0; i < data.length; i += 4) {
-      const g = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-      out[i] = out[i+1] = out[i+2] = g;
-    }
-  } else if (type === "invert") {
-    for (let i = 0; i < data.length; i += 4) {
-      out[i] = 255 - data[i];
-      out[i+1] = 255 - data[i+1];
-      out[i+2] = 255 - data[i+2];
-    }
-  } else if (type === "sepia") {
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i], g = data[i+1], b = data[i+2];
-      out[i]   = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189);
-      out[i+1] = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168);
-      out[i+2] = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131);
-    }
-  } else if (type === "pixelate") {
-    const size = 8;
-    for (let y = 0; y < height; y += size) {
-      for (let x = 0; x < width; x += size) {
-        const idx = (y * width + x) * 4;
-        const [r, g, b, a] = [data[idx], data[idx+1], data[idx+2], data[idx+3]];
-        for (let dy = 0; dy < size && y + dy < height; dy++) {
-          for (let dx = 0; dx < size && x + dx < width; dx++) {
-            const i = ((y+dy) * width + (x+dx)) * 4;
-            out[i] = r; out[i+1] = g; out[i+2] = b; out[i+3] = a;
+      // ─── Текст ──────────────────────────────
+      function draw_text() {
+        const canvas = document.getElementById("c-text");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0d1117";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const text = document.getElementById("canvas-text-input").value;
+        const font = document.getElementById("canvas-font-select").value;
+
+        // Baseline guide
+        ctx.strokeStyle = "#30363d";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 60);
+        ctx.lineTo(canvas.width, 60);
+        ctx.stroke();
+
+        // Text
+        ctx.font = font;
+        ctx.fillStyle = "#3b82f6";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText(text, 20, 60);
+
+        // Stroke text
+        ctx.strokeStyle = "#f97316";
+        ctx.lineWidth = 1.5;
+        ctx.strokeText(text, 20, 100);
+
+        // Metrics
+        const m = ctx.measureText(text);
+        document.getElementById("out-text").textContent = [
+          `font: "${font}"`,
+          `text: "${text}"`,
+          `width: ${m.width.toFixed(1)}px`,
+          `actualBoundingBoxAscent: ${m.actualBoundingBoxAscent?.toFixed(1)}px`,
+          `actualBoundingBoxDescent: ${m.actualBoundingBoxDescent?.toFixed(1)}px`,
+        ].join("\n");
+      }
+
+      // ─── Трансформации ──────────────────────
+      let transformRafId = null;
+
+      function draw_transforms() {
+        const ctx = document.getElementById("c-transform").getContext("2d");
+        ctx.clearRect(0, 0, 700, 250);
+        ctx.fillStyle = "#0d1117";
+        ctx.fillRect(0, 0, 700, 250);
+
+        // translate + rotate
+        for (let i = 0; i < 8; i++) {
+          ctx.save();
+          ctx.translate(80 + i * 80, 125);
+          ctx.rotate((i * Math.PI) / 8);
+          ctx.fillStyle = `hsl(${i * 45}, 70%, 60%)`;
+          ctx.fillRect(-25, -25, 50, 50);
+          ctx.restore();
+        }
+
+        // scale
+        ctx.save();
+        ctx.translate(60, 210);
+        ctx.scale(1.5, 0.7);
+        ctx.fillStyle = "#3b82f6";
+        ctx.fillRect(-30, -20, 60, 40);
+        ctx.restore();
+      }
+
+      function animate_transform() {
+        if (transformRafId) return;
+        const ctx = document.getElementById("c-transform").getContext("2d");
+        let angle = 0;
+
+        function frame() {
+          ctx.clearRect(0, 0, 700, 250);
+          ctx.fillStyle = "#0d1117";
+          ctx.fillRect(0, 0, 700, 250);
+
+          // Вращающиеся прямоугольники
+          for (let i = 0; i < 8; i++) {
+            ctx.save();
+            ctx.translate(80 + i * 80, 125);
+            ctx.rotate(angle + (i * Math.PI) / 4);
+            const hue = (i * 45 + angle * 30) % 360;
+            ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+            ctx.fillRect(-20, -20, 40, 40);
+            ctx.restore();
           }
+
+          angle += 0.02;
+          transformRafId = requestAnimationFrame(frame);
+        }
+
+        transformRafId = requestAnimationFrame(frame);
+      }
+
+      function stop_transform() {
+        if (transformRafId) {
+          cancelAnimationFrame(transformRafId);
+          transformRafId = null;
         }
       }
-    }
-  }
 
-  const ms = (performance.now() - t).toFixed(2);
-  const outImageData = new ImageData(out, width, height);
-  dstCtx.putImageData(outImageData, 0, 0);
+      // ─── Game Loop ──────────────────────────
+      let gameRafId = null;
+      let balls = [];
 
-  document.getElementById("out-pixel").textContent = [
-    `Фильтр: ${type}`,
-    `Пикселей обработано: ${width * height}`,
-    `Время: ${ms}ms`,
-    ``,
-    `data — Uint8ClampedArray: [R,G,B,A, R,G,B,A, ...]`,
-    `Длина: ${width} × ${height} × 4 = ${width*height*4}`,
-  ].join("\n");
-}
+      function createBalls(n, w, h) {
+        return Array.from({ length: n }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          r: 8 + Math.random() * 16,
+          color: `hsl(${Math.random() * 360}, 70%, 60%)`,
+          trail: [],
+        }));
+      }
 
-// ─── Drawing ────────────────────────────
-{
-  const canvas = document.getElementById("c-draw");
-  const ctx = canvas.getContext("2d");
-  let isDrawing = false;
-  let lastX = 0, lastY = 0;
+      function gameStart() {
+        if (gameRafId) cancelAnimationFrame(gameRafId);
+        const canvas = document.getElementById("c-game");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width,
+          H = canvas.height;
+        const n = parseInt(document.getElementById("ball-count").value);
+        balls = createBalls(n, W, H);
 
-  const getColor = () => document.getElementById("draw-color").value;
-  const getSize  = () => parseInt(document.getElementById("draw-size").value);
+        let lastTs = 0,
+          frames = 0,
+          fps = 0,
+          fpsTimer = 0;
 
-  document.getElementById("draw-size").addEventListener("input", (e) => {
-    document.getElementById("draw-size-label").textContent = e.target.value;
-  });
+        function loop(ts) {
+          const dt = Math.min((ts - lastTs) / 1000, 0.05);
+          lastTs = ts;
+          frames++;
+          fpsTimer += dt;
+          if (fpsTimer >= 0.5) {
+            fps = Math.round(frames / fpsTimer);
+            frames = 0;
+            fpsTimer = 0;
+          }
 
-  canvas.addEventListener("pointerdown", (e) => {
-    isDrawing = true;
-    canvas.setPointerCapture(e.pointerId);
-    [lastX, lastY] = [e.offsetX, e.offsetY];
-  });
+          // Clear
+          ctx.fillStyle = "#0d1117";
+          ctx.fillRect(0, 0, W, H);
 
-  canvas.addEventListener("pointermove", (e) => {
-    if (!isDrawing) return;
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(e.offsetX, e.offsetY);
-    ctx.strokeStyle = getColor();
-    ctx.lineWidth = getSize() * (e.pressure || 1); // давление стилуса!
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.stroke();
-    [lastX, lastY] = [e.offsetX, e.offsetY];
+          // Update & draw
+          for (const b of balls) {
+            b.x += b.vx * dt * 60;
+            b.y += b.vy * dt * 60;
+            if (b.x < b.r) {
+              b.x = b.r;
+              b.vx = Math.abs(b.vx);
+            }
+            if (b.x > W - b.r) {
+              b.x = W - b.r;
+              b.vx = -Math.abs(b.vx);
+            }
+            if (b.y < b.r) {
+              b.y = b.r;
+              b.vy = Math.abs(b.vy);
+            }
+            if (b.y > H - b.r) {
+              b.y = H - b.r;
+              b.vy = -Math.abs(b.vy);
+            }
 
-    document.getElementById("out-draw").textContent =
-      `pointerType: "${e.pointerType}" | pressure: ${e.pressure.toFixed(2)} | ` +
-      `pos: (${e.offsetX.toFixed(0)}, ${e.offsetY.toFixed(0)})`;
-  });
+            // Trail
+            b.trail.push({ x: b.x, y: b.y });
+            if (b.trail.length > 8) b.trail.shift();
+            if (b.trail.length > 1) {
+              ctx.beginPath();
+              ctx.moveTo(b.trail[0].x, b.trail[0].y);
+              b.trail.forEach((p) => ctx.lineTo(p.x, p.y));
+              ctx.strokeStyle = b.color + "44";
+              ctx.lineWidth = b.r / 2;
+              ctx.lineCap = "round";
+              ctx.stroke();
+            }
 
-  canvas.addEventListener("pointerup", () => { isDrawing = false; });
-  canvas.addEventListener("pointerleave", () => { isDrawing = false; });
-}
-</script>
-</body>
+            // Ball
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+            const grad = ctx.createRadialGradient(
+              b.x - b.r * 0.3,
+              b.y - b.r * 0.3,
+              0,
+              b.x,
+              b.y,
+              b.r,
+            );
+            grad.addColorStop(0, "white");
+            grad.addColorStop(0.3, b.color);
+            grad.addColorStop(1, b.color + "88");
+            ctx.fillStyle = grad;
+            ctx.fill();
+          }
+
+          // HUD
+          ctx.fillStyle = "#8b949e";
+          ctx.font = "12px monospace";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText(
+            `FPS: ${fps} | Balls: ${balls.length} | dt: ${(dt * 1000).toFixed(1)}ms`,
+            8,
+            8,
+          );
+
+          gameRafId = requestAnimationFrame(loop);
+        }
+
+        lastTs = performance.now();
+        gameRafId = requestAnimationFrame(loop);
+        document.getElementById("out-game").textContent =
+          `▶ Running | ${n} balls | frame-rate independent (dt)`;
+      }
+
+      function gameStop() {
+        if (gameRafId) {
+          cancelAnimationFrame(gameRafId);
+          gameRafId = null;
+        }
+        document.getElementById("out-game").textContent = "■ Остановлено";
+      }
+
+      document.getElementById("ball-count").addEventListener("input", (e) => {
+        document.getElementById("ball-count-label").textContent =
+          e.target.value;
+      });
+
+      // ─── Pixel Manipulation ─────────────────
+      function pixel_drawSource() {
+        const ctx = document.getElementById("c-pixel-src").getContext("2d");
+        ctx.clearRect(0, 0, 200, 150);
+
+        // Рисуем красивую картинку
+        const lg = ctx.createLinearGradient(0, 0, 200, 150);
+        lg.addColorStop(0, "#7c3aed");
+        lg.addColorStop(1, "#0891b2");
+        ctx.fillStyle = lg;
+        ctx.fillRect(0, 0, 200, 150);
+
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath();
+        ctx.arc(70, 60, 35, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#22c55e";
+        ctx.fillRect(110, 40, 60, 60);
+
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        ctx.font = "bold 14px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText("Source", 100, 148);
+
+        document.getElementById("out-pixel").textContent =
+          "Источник нарисован. Выбери фильтр.";
+      }
+
+      function pixel_filter(type) {
+        const src = document.getElementById("c-pixel-src");
+        const dst = document.getElementById("c-pixel-dst");
+        const dstCtx = dst.getContext("2d");
+
+        const srcCtx = src.getContext("2d");
+        const { data, width, height } = srcCtx.getImageData(
+          0,
+          0,
+          src.width,
+          src.height,
+        );
+        const out = new Uint8ClampedArray(data);
+
+        const t = performance.now();
+
+        if (type === "grayscale") {
+          for (let i = 0; i < data.length; i += 4) {
+            const g =
+              0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            out[i] = out[i + 1] = out[i + 2] = g;
+          }
+        } else if (type === "invert") {
+          for (let i = 0; i < data.length; i += 4) {
+            out[i] = 255 - data[i];
+            out[i + 1] = 255 - data[i + 1];
+            out[i + 2] = 255 - data[i + 2];
+          }
+        } else if (type === "sepia") {
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i],
+              g = data[i + 1],
+              b = data[i + 2];
+            out[i] = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189);
+            out[i + 1] = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168);
+            out[i + 2] = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131);
+          }
+        } else if (type === "pixelate") {
+          const size = 8;
+          for (let y = 0; y < height; y += size) {
+            for (let x = 0; x < width; x += size) {
+              const idx = (y * width + x) * 4;
+              const [r, g, b, a] = [
+                data[idx],
+                data[idx + 1],
+                data[idx + 2],
+                data[idx + 3],
+              ];
+              for (let dy = 0; dy < size && y + dy < height; dy++) {
+                for (let dx = 0; dx < size && x + dx < width; dx++) {
+                  const i = ((y + dy) * width + (x + dx)) * 4;
+                  out[i] = r;
+                  out[i + 1] = g;
+                  out[i + 2] = b;
+                  out[i + 3] = a;
+                }
+              }
+            }
+          }
+        }
+
+        const ms = (performance.now() - t).toFixed(2);
+        const outImageData = new ImageData(out, width, height);
+        dstCtx.putImageData(outImageData, 0, 0);
+
+        document.getElementById("out-pixel").textContent = [
+          `Фильтр: ${type}`,
+          `Пикселей обработано: ${width * height}`,
+          `Время: ${ms}ms`,
+          ``,
+          `data — Uint8ClampedArray: [R,G,B,A, R,G,B,A, ...]`,
+          `Длина: ${width} × ${height} × 4 = ${width * height * 4}`,
+        ].join("\n");
+      }
+
+      // ─── Drawing ────────────────────────────
+      {
+        const canvas = document.getElementById("c-draw");
+        const ctx = canvas.getContext("2d");
+        let isDrawing = false;
+        let lastX = 0,
+          lastY = 0;
+
+        const getColor = () => document.getElementById("draw-color").value;
+        const getSize = () =>
+          parseInt(document.getElementById("draw-size").value);
+
+        document.getElementById("draw-size").addEventListener("input", (e) => {
+          document.getElementById("draw-size-label").textContent =
+            e.target.value;
+        });
+
+        canvas.addEventListener("pointerdown", (e) => {
+          isDrawing = true;
+          canvas.setPointerCapture(e.pointerId);
+          [lastX, lastY] = [e.offsetX, e.offsetY];
+        });
+
+        canvas.addEventListener("pointermove", (e) => {
+          if (!isDrawing) return;
+          ctx.beginPath();
+          ctx.moveTo(lastX, lastY);
+          ctx.lineTo(e.offsetX, e.offsetY);
+          ctx.strokeStyle = getColor();
+          ctx.lineWidth = getSize() * (e.pressure || 1); // давление стилуса!
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          ctx.stroke();
+          [lastX, lastY] = [e.offsetX, e.offsetY];
+
+          document.getElementById("out-draw").textContent =
+            `pointerType: "${e.pointerType}" | pressure: ${e.pressure.toFixed(2)} | ` +
+            `pos: (${e.offsetX.toFixed(0)}, ${e.offsetY.toFixed(0)})`;
+        });
+
+        canvas.addEventListener("pointerup", () => {
+          isDrawing = false;
+        });
+        canvas.addEventListener("pointerleave", () => {
+          isDrawing = false;
+        });
+      }
+    </script>
+  </body>
 </html>

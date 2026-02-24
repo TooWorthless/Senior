@@ -17,8 +17,8 @@ function esc(s: string): string {
 
 // Строит srcdoc для JS sandbox iframe
 function buildSandbox(code: string, id: number): string {
-  // Используем JSON.stringify чтобы безопасно встроить код в строку JS
-  const safeCode = JSON.stringify(code);
+  // btoa/atob — безопасно для любых символов включая </script> и кавычки
+  const encoded = btoa(unescape(encodeURIComponent(code)));
   return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script>
 (function(){
   var ID=${id};
@@ -47,7 +47,12 @@ function buildSandbox(code: string, id: number): string {
   window.addEventListener('unhandledrejection',function(e){
     var r=e.reason;send('error',['UnhandledRejection: '+(r&&r.message?r.message:String(r))]);
   });
-  try{eval(${safeCode});}catch(e){send('error',[e&&(e.stack||e.message)||String(e)]);}
+  // (0,eval) = indirect eval — выполняет код в глобальном scope (window),
+  // поэтому объявленные функции доступны из onclick/event handlers
+  try{
+    var _c=decodeURIComponent(escape(atob('${encoded}')));
+    (0,eval)(_c);
+  }catch(e){send('error',[e&&(e.stack||e.message)||String(e)]);}
 })();
 <\/script></body></html>`;
 }
