@@ -39,14 +39,21 @@
 | 10 | REST & GraphQL клиент | fetch, axios, React Query, Apollo Client, кэш, optimistic UI | ⏳ Планируется |
 | 11 | Web3.js | Ethereum, контракты, ABI, MetaMask, подписи, IPFS | ⏳ Планируется |
 
+### Тестирование
+
+| # | Модуль | Ключевые темы | Статус |
+|---|--------|---------------|--------|
+| 12 | Тестирование | Unit (Jest/Vitest), RTL, E2E (Playwright/Detox), MSW, TDD, coverage | ⏳ Планируется |
+
 ### Архитектура и инфраструктура
 
 | # | Модуль | Ключевые темы | Статус |
 |---|--------|---------------|--------|
-| 12 | Производительность | CRP, LCP/CLS/FID, bundle, code splitting, profiling | ⏳ Планируется |
-| 13 | Безопасность веба | XSS, CSRF, CSP, Auth flows, JWT, OAuth2 | ⏳ Планируется |
-| 14 | System Design (Frontend) | Monorepo, micro-frontends, CDN, масштабирование | ⏳ Планируется |
-| 15 | Behavioral / Soft Skills | STAR, системное мышление, leadership, архитектурные решения | ⏳ Планируется |
+| 13 | Архитектура фронтенда | FSD, модульная архитектура, Monorepo, micro-frontends, DDD на фронте | ⏳ Планируется |
+| 14 | Производительность | CRP, LCP/CLS/FID, bundle, code splitting, profiling | ⏳ Планируется |
+| 15 | Безопасность веба | XSS, CSRF, CSP, Auth flows, JWT, OAuth2 | ⏳ Планируется |
+| 16 | System Design (Frontend) | CDN, кэширование, масштабирование, real-time, offline-first | ⏳ Планируется |
+| 17 | Behavioral / Soft Skills | STAR, системное мышление, leadership, архитектурные решения | ⏳ Планируется |
 
 ---
 
