@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import Link from "next/link";
 import "./globals.css";
 import "@/styles/themes/midnight.css";
 import "@/styles/themes/aurora.css";
@@ -8,7 +6,7 @@ import "@/styles/themes/light.css";
 import "@/styles/themes/rose.css";
 import "@/styles/base.css";
 import { getAllModules } from "@/lib/modules";
-import AppSidebar from "@/components/AppSidebar";
+import AppFrame from "@/components/AppFrame";
 
 export const metadata: Metadata = {
   title: "Senior Prep Viewer",
@@ -31,23 +29,7 @@ export default async function RootLayout({
         }} />
       </head>
       <body suppressHydrationWarning>
-        <div className="app-layout">
-          <aside className="app-sidebar">
-            <Link href="/" className="sidebar-header" style={{ textDecoration: "none" }}>
-              <div className="sidebar-logo">⚡</div>
-              <div>
-                <div className="sidebar-title">Senior Prep</div>
-                <div className="sidebar-sub">Frontend Interview</div>
-              </div>
-            </Link>
-            <Suspense fallback={<div style={{ padding: 16, color: "#8b949e", fontSize: 12 }}>Loading nav...</div>}>
-              <AppSidebar modules={modules} />
-            </Suspense>
-          </aside>
-          <main className="app-main">
-            {children}
-          </main>
-        </div>
+        <AppFrame modules={modules}>{children}</AppFrame>
       </body>
     </html>
   );

@@ -36,6 +36,7 @@
   --orb-2:            rgba(139, 92, 246, 0.04);
   --sidebar-glow-col: rgba(99, 102, 241, 0.06);
   --card-glow-col:    rgba(99, 102, 241, 0.04);
+  --bg-image-opacity: 0.08;
 }
 
 /* ── Light-specific overrides ──────────────────────────────────────────── */

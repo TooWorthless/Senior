@@ -4,39 +4,42 @@
 :root,
 [data-theme="midnight"] {
   --sidebar-width: 272px;
+  /* Background image (place file at viewer/public/matrix.png) */
+  --bg-image: url("/matrix.jpg");
+  --bg-image-opacity: 0.18;
 
-  --bg-base:    #07060f;
+  --bg-base: #07060f;
   --bg-surface: #0e0c1a;
-  --bg-card:    #110f1e;
-  --bg-hover:   #17152a;
-  --bg-input:   #0a0916;
+  --bg-card: #110f1e;
+  --bg-hover: #17152a;
+  --bg-input: #0a0916;
 
-  --border:         #1c1a32;
-  --border-hover:   #2a2745;
-  --border-active:  #4f46e5;
+  --border: #1c1a32;
+  --border-hover: #2a2745;
+  --border-active: #4f46e5;
 
-  --accent:       #6366f1;
+  --accent: #6366f1;
   --accent-light: #818cf8;
-  --accent-dim:   rgba(99, 102, 241, 0.15);
-  --accent-glow:  rgba(99, 102, 241, 0.30);
-  --accent-2:     #a78bfa;
+  --accent-dim: rgba(99, 102, 241, 0.15);
+  --accent-glow: rgba(99, 102, 241, 0.3);
+  --accent-2: #a78bfa;
 
-  --green:       #10b981;
-  --green-dim:   rgba(16, 185, 129, 0.12);
-  --green-glow:  rgba(16, 185, 129, 0.30);
-  --amber:       #f59e0b;
-  --red:         #ef4444;
-  --blue:        #60a5fa;
+  --green: #10b981;
+  --green-dim: rgba(16, 185, 129, 0.12);
+  --green-glow: rgba(16, 185, 129, 0.3);
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --blue: #60a5fa;
 
-  --text-primary:   #ece9ff;
+  --text-primary: #ece9ff;
   --text-secondary: #9b99b8;
-  --text-muted:     #4a4868;
+  --text-muted: #4a4868;
 
   /* Component-specific tokens */
-  --code-wrapper-bg:  #0d0c1a;
-  --code-bar-bg:      #13111f;
-  --orb-1:            rgba(99, 102, 241, 0.12);
-  --orb-2:            rgba(167, 139, 250, 0.08);
+  --code-wrapper-bg: #0d0c1a;
+  --code-bar-bg: #13111f;
+  --orb-1: rgba(99, 102, 241, 0.12);
+  --orb-2: rgba(167, 139, 250, 0.08);
   --sidebar-glow-col: rgba(99, 102, 241, 0.14);
-  --card-glow-col:    rgba(99, 102, 241, 0.07);
+  --card-glow-col: rgba(99, 102, 241, 0.07);
 }
