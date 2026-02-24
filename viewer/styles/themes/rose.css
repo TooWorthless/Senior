@@ -1,0 +1,39 @@
+/* ══════════════════════════════════════════════════════════════════
+   ROSE — dark rose gold & magenta (premium & trendy)
+   ══════════════════════════════════════════════════════════════════ */
+[data-theme="rose"] {
+  --bg-base:    #0c0709;
+  --bg-surface: #150c11;
+  --bg-card:    #1c1018;
+  --bg-hover:   #241520;
+  --bg-input:   #0f0810;
+
+  --border:         #2e1525;
+  --border-hover:   #4d1f3c;
+  --border-active:  #e11d74;
+
+  --accent:       #e11d74;
+  --accent-light: #f43f8d;
+  --accent-dim:   rgba(225, 29, 116, 0.12);
+  --accent-glow:  rgba(225, 29, 116, 0.35);
+  --accent-2:     #c026d3;
+
+  --green:       #10b981;
+  --green-dim:   rgba(16, 185, 129, 0.10);
+  --green-glow:  rgba(16, 185, 129, 0.25);
+  --amber:       #fbbf24;
+  --red:         #f43f5e;
+  --blue:        #818cf8;
+
+  --text-primary:   #fff0f5;
+  --text-secondary: #c07898;
+  --text-muted:     #5c2a40;
+
+  /* Component-specific tokens */
+  --code-wrapper-bg:  #100810;
+  --code-bar-bg:      #190e16;
+  --orb-1:            rgba(225, 29, 116, 0.10);
+  --orb-2:            rgba(192, 38, 211, 0.07);
+  --sidebar-glow-col: rgba(225, 29, 116, 0.12);
+  --card-glow-col:    rgba(225, 29, 116, 0.06);
+}

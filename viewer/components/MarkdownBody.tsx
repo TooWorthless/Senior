@@ -54,19 +54,21 @@ function buildSandbox(code: string, id: number): string {
 
 // Открыть/закрыть inline консоль для блока кода
 function toggleBlock(preEl: HTMLPreElement, btn: HTMLButtonElement, wrapper: HTMLElement) {
-  // Код читаем из textContent — htmljs entities уже декодированы
   const code = preEl.querySelector("code")?.textContent ?? "";
   const lang = preEl.getAttribute("data-lang") ?? "javascript";
+  const originalLabel = btn.getAttribute("data-original-label") ?? "▶ Run JS";
 
   // Toggle: если консоль уже открыта — закрыть
   const existing = wrapper.nextElementSibling;
   if (existing?.classList.contains("inline-console")) {
     existing.remove();
     btn.classList.remove("active");
+    btn.textContent = originalLabel;
     return;
   }
 
   btn.classList.add("active");
+  btn.textContent = "✕ Close";
 
   // ── Построить панель ───────────────────────────────────────────────────
   const panel = document.createElement("div");
@@ -80,7 +82,11 @@ function toggleBlock(preEl: HTMLPreElement, btn: HTMLButtonElement, wrapper: HTM
   const closeBtn = document.createElement("button");
   closeBtn.className = "inline-console-close";
   closeBtn.textContent = "✕ Close";
-  closeBtn.onclick = () => { panel.remove(); btn.classList.remove("active"); };
+  closeBtn.onclick = () => {
+    panel.remove();
+    btn.classList.remove("active");
+    btn.textContent = originalLabel;
+  };
   header.appendChild(titleEl);
   header.appendChild(closeBtn);
   panel.appendChild(header);
@@ -95,7 +101,7 @@ function toggleBlock(preEl: HTMLPreElement, btn: HTMLButtonElement, wrapper: HTM
 
   // ── HTML / CSS preview ────────────────────────────────────────────────
   if (lang === "html" || lang === "css") {
-    titleEl.textContent = `▶ Preview · ${lang.toUpperCase()}`;
+    titleEl.innerHTML = `<span class="inline-console-dot"></span>Preview · ${lang.toUpperCase()}`;
     output.style.padding = "0";
     output.style.minHeight = "200px";
     const iframe = document.createElement("iframe");
@@ -110,7 +116,7 @@ function toggleBlock(preEl: HTMLPreElement, btn: HTMLButtonElement, wrapper: HTM
   }
 
   // ── JavaScript sandbox ─────────────────────────────────────────────────
-  titleEl.textContent = "▶ Console output";
+  titleEl.innerHTML = `<span class="inline-console-dot"></span>Console output`;
   output.innerHTML = `<div style="color:#8b949e;padding:4px 0;font-size:12px">⏳ Running...</div>`;
 
   const id = ++execId;
@@ -158,12 +164,12 @@ function toggleBlock(preEl: HTMLPreElement, btn: HTMLButtonElement, wrapper: HTM
   iframe.srcdoc = buildSandbox(code, id);
 
   // Cleanup при закрытии панели
-  const origClose = closeBtn.onclick;
+  const prevClose = closeBtn.onclick;
   closeBtn.onclick = () => {
     clearTimeout(timer);
     window.removeEventListener("message", handler);
     iframe.remove();
-    if (origClose) (origClose as () => void)();
+    if (prevClose) (prevClose as () => void)();
   };
 }
 
@@ -179,10 +185,11 @@ export default function MarkdownBody({ html }: Props) {
     blocks.forEach((pre) => {
       if (pre.parentElement?.classList.contains("code-block-wrapper")) return;
 
-      const lang  = pre.getAttribute("data-lang") ?? "javascript";
-      const label = lang === "html" ? "▶ Preview HTML"
-        : lang === "css"  ? "▶ Preview CSS"
-        : "▶ Run JS";
+      const lang = pre.getAttribute("data-lang") ?? "javascript";
+
+      // CSS без HTML — смысла нет, просто оборачиваем без кнопки
+      const isRunnable = lang !== "css";
+      const label = lang === "html" ? "▶ Preview HTML" : "▶ Run JS";
 
       // Wrapper
       const wrapper = document.createElement("div");
@@ -190,18 +197,28 @@ export default function MarkdownBody({ html }: Props) {
       pre.parentNode?.insertBefore(wrapper, pre);
       wrapper.appendChild(pre);
 
-      // Header bar (над кодом)
+      // Header bar — macOS-style dots
       const bar = document.createElement("div");
       bar.className = "code-block-bar";
-      bar.innerHTML = `<span class="code-block-lang">${lang}</span>`;
+      bar.innerHTML = `
+        <span class="code-block-dots">
+          <span class="code-block-dot red"></span>
+          <span class="code-block-dot yellow"></span>
+          <span class="code-block-dot green"></span>
+        </span>
+        <span class="code-block-lang" data-lang="${lang}">${lang}</span>
+      `;
       wrapper.insertBefore(bar, pre);
 
-      // Run button в баре
-      const btn = document.createElement("button");
-      btn.className = "code-run-btn";
-      btn.textContent = label;
-      btn.setAttribute("data-for-pre", "true");
-      bar.appendChild(btn);
+      // Run button — только для JS и HTML
+      if (isRunnable) {
+        const btn = document.createElement("button");
+        btn.className = "code-run-btn";
+        btn.textContent = label;
+        btn.setAttribute("data-for-pre", "true");
+        btn.setAttribute("data-original-label", label);
+        bar.appendChild(btn);
+      }
     });
 
     // ── Event delegation (один listener на весь контейнер) ───────────────
