@@ -8,25 +8,52 @@
 
 ## Модули
 
-| # | Модуль | Статус |
-|---|--------|--------|
-| 01 | [HTML](./01-html/README.md) | ✅ Готов |
-| 02 | [CSS](./02-css/README.md) | ✅ Готов |
-| 03 | JavaScript | ⏳ Планируется |
-| 04 | TypeScript | ⏳ Планируется |
-| 05 | React | ⏳ Планируется |
-| 06 | Next.js | ⏳ Планируется |
-| 07 | Производительность | ⏳ Планируется |
-| 08 | Безопасность веба | ⏳ Планируется |
-| 09 | System Design (Frontend) | ⏳ Планируется |
-| 10 | Behavioral / Soft Skills | ⏳ Планируется |
+### Основы платформы
+
+| # | Модуль | Ключевые темы | Статус |
+|---|--------|---------------|--------|
+| 01 | [HTML](./01-html/README.md) | Семантика, a11y, формы, Web Components, SEO, безопасность | ✅ Готов |
+| 02 | [CSS](./02-css/README.md) | Cascade, Flexbox, Grid, Custom Properties, анимации, архитектура | ✅ Готов |
+| 03 | [JavaScript](./03-javascript/README.md) | Типы, scope, async, Event Loop, алгоритмы, сортировки | ✅ Готов |
+| 04 | JavaScript & DOM | DOM API, Events, Virtual DOM, MutationObserver, Canvas/WebGL | ⏳ Планируется |
+| 05 | WebSockets / WebRTC | ws протокол, Socket.IO, WebRTC peer-to-peer, STUN/TURN, signaling | ⏳ Планируется |
+
+### Фреймворки и UI
+
+| # | Модуль | Ключевые темы | Статус |
+|---|--------|---------------|--------|
+| 06 | React | Reconciliation, Hooks, Context, Suspense, Server Components | ⏳ Планируется |
+| 07 | React Native + Expo | Bridge, JSI, новая архитектура, lifecycle, платформенные API | ⏳ Планируется |
+| 08 | Reanimated + Skia | Worklets, shared values, анимации на UI thread, 2D-рендеринг | ⏳ Планируется |
+
+### Управление состоянием
+
+| # | Модуль | Ключевые темы | Статус |
+|---|--------|---------------|--------|
+| 09 | Redux / MobX / Zustand | Flux, middleware, реактивность, паттерны, trade-off'ы | ⏳ Планируется |
+
+### Сеть и данные
+
+| # | Модуль | Ключевые темы | Статус |
+|---|--------|---------------|--------|
+| 10 | REST & GraphQL клиент | fetch, axios, React Query, Apollo Client, кэш, optimistic UI | ⏳ Планируется |
+| 11 | Web3.js | Ethereum, контракты, ABI, MetaMask, подписи, IPFS | ⏳ Планируется |
+
+### Архитектура и инфраструктура
+
+| # | Модуль | Ключевые темы | Статус |
+|---|--------|---------------|--------|
+| 12 | Производительность | CRP, LCP/CLS/FID, bundle, code splitting, profiling | ⏳ Планируется |
+| 13 | Безопасность веба | XSS, CSRF, CSP, Auth flows, JWT, OAuth2 | ⏳ Планируется |
+| 14 | System Design (Frontend) | Monorepo, micro-frontends, CDN, масштабирование | ⏳ Планируется |
+| 15 | Behavioral / Soft Skills | STAR, системное мышление, leadership, архитектурные решения | ⏳ Планируется |
 
 ---
 
 ## Как пользоваться
 
 - Каждый модуль — отдельная папка с `README.md` и подмодулями.
-- В каждом подмодуле: теория в `README.md`, код в `examples/`, дополнительные заметки в `notes.md`.
+- В каждом подмодуле: теория в `README.md`, код в `examples/`.
 - Вопросы для интервью выделены блоком `> 💬 Вопрос на интервью`.
 - Ответы-ловушки и распространённые ошибки выделены блоком `> ⚠️ Ловушка`.
 
@@ -34,4 +61,4 @@
 
 ## Стек
 
-`React` · `React Native (Expo)` · `Next.js App Router` · `TypeScript (strict)` · `REST / GraphQL`
+`React` · `React Native (Expo)` · `Reanimated` · `Skia` · `Redux / MobX / Zustand` · `Apollo GraphQL` · `Web3.js` · `WebSockets / WebRTC` · `REST / GraphQL`
