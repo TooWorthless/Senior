@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Events</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: monospace; padding: 20px; background: #0d1117; color: #c9d1d9; }
+    .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
+    button { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 3px; font-family: monospace; }
+    button.red { background: #b91c1c; }
+    button.blue { background: #1d4ed8; }
+    output { display: block; background: #010409; padding: 10px; border-radius: 6px; margin-top: 8px; white-space: pre-wrap; font-size: 12px; min-height: 40px; max-height: 200px; overflow-y: auto; }
+    h2 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 0; }
+    .propagation-outer { background: #1e3a5f; padding: 20px; border-radius: 8px; border: 2px solid #3b82f6; cursor: pointer; }
+    .propagation-middle { background: #1a4731; padding: 15px; border-radius: 6px; border: 2px solid #22c55e; cursor: pointer; }
+    .propagation-inner { background: #4c1d95; padding: 10px; border-radius: 4px; border: 2px solid #a78bfa; cursor: pointer; display: inline-block; }
+    .delegation-list { list-style: none; padding: 0; margin: 0; }
+    .delegation-list li { padding: 8px 12px; margin: 4px 0; background: #21262d; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+    .del-btn { background: #b91c1c; padding: 2px 8px; font-size: 11px; }
+    .highlight { background: #2d4a22 !important; transition: background 0.3s; }
+    kbd { background: #30363d; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<h1>Events — интерактивный справочник</h1>
+
+<!-- ─── Фазы событий ────────────────────── -->
+<div class="box">
+  <h2>Фазы событий: Capture → Target → Bubble</h2>
+  <p style="color:#8b949e;font-size:13px">Нажми на INNER (фиолетовый). Следи за порядком срабатывания.</p>
+
+  <div class="propagation-outer" id="outer">
+    OUTER (синий)
+    <div class="propagation-middle" id="middle">
+      MIDDLE (зелёный)
+      <div class="propagation-inner" id="inner">INNER (фиолетовый) — кликни</div>
+    </div>
+  </div>
+
+  <br>
+  <button onclick="setupPropagation(false)">Bubble (default)</button>
+  <button onclick="setupPropagation(true)">Capture</button>
+  <button onclick="setupStopPropagation()">stopPropagation на MIDDLE</button>
+  <button class="red" onclick="clearPropagation()">Очистить</button>
+  <output id="out-propagation">Нажми на одну из кнопок выше, затем на INNER</output>
+</div>
+
+<!-- ─── target vs currentTarget ─────────── -->
+<div class="box">
+  <h2>event.target vs event.currentTarget</h2>
+  <div id="target-demo" style="background:#21262d;padding:16px;border-radius:6px;cursor:pointer">
+    <span style="color:#58a6ff">Click anywhere in this container →</span>
+    <button style="margin-left:12px">Button inside</button>
+    <strong style="margin-left:12px">Bold text</strong>
+    <em style="margin-left:12px">Italic</em>
+  </div>
+  <output id="out-target">Кликни по разным местам внутри контейнера</output>
+</div>
+
+<!-- ─── Делегирование событий ────────────── -->
+<div class="box">
+  <h2>Делегирование событий</h2>
+  <p style="color:#8b949e;font-size:13px">Один обработчик на <code>&lt;ul&gt;</code> управляет всеми кнопками, включая динамически добавленные.</p>
+  <button onclick="addItem()">+ Добавить элемент</button>
+  <ul class="delegation-list" id="delegation-list">
+    <li data-id="1"><span>Item 1</span><button class="del-btn" data-action="delete">✕</button></li>
+    <li data-id="2"><span>Item 2</span><button class="del-btn" data-action="delete">✕</button></li>
+    <li data-id="3"><span>Item 3</span><button class="del-btn" data-action="delete">✕</button></li>
+  </ul>
+  <output id="out-delegation">Удали элемент или добавь новый</output>
+</div>
+
+<!-- ─── AbortController ───────────────────── -->
+<div class="box">
+  <h2>AbortController — группировка и удаление обработчиков</h2>
+  <div id="ac-box" style="background:#21262d;padding:12px;border-radius:6px">
+    <button id="ac-btn1">Button 1 (click)</button>
+    <button id="ac-btn2">Button 2 (click)</button>
+    <span id="ac-target" style="padding:8px;cursor:pointer"> hover me </span>
+  </div>
+  <br>
+  <button onclick="startAC()">Добавить обработчики</button>
+  <button class="red" onclick="stopAC()">AbortController.abort() → убрать все</button>
+  <output id="out-ac">Нажми "Добавить обработчики"</output>
+</div>
+
+<!-- ─── CustomEvent ───────────────────────── -->
+<div class="box">
+  <h2>CustomEvent — собственные события</h2>
+  <div id="cart" style="background:#21262d;padding:12px;border-radius:6px">
+    <strong>Корзина: <span id="cart-count">0</span> товаров</strong>
+  </div>
+  <br>
+  <button onclick="emitCartEvent(1)">+ Добавить товар</button>
+  <button onclick="emitCartEvent(-1)">- Убрать товар</button>
+  <button onclick="emitCartEvent(0, true)">Очистить корзину</button>
+  <output id="out-custom">Нажми кнопки выше</output>
+</div>
+
+<!-- ─── Keyboard & Pointer ───────────────── -->
+<div class="box">
+  <h2>Keyboard events: key vs code</h2>
+  <input id="key-input" placeholder="Нажми любую клавишу здесь" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:8px;border-radius:4px;width:300px;font-family:monospace">
+  <output id="out-keyboard">Фокус на поле и нажми клавишу</output>
+</div>
+
+<div class="box">
+  <h2>Pointer events (mouse + touch + pen)</h2>
+  <div id="pointer-area" style="background:#21262d;padding:30px;border-radius:6px;cursor:crosshair;text-align:center;user-select:none">
+    Двигай мышь / касайся экрана
+  </div>
+  <output id="out-pointer">Наведи курсор на область</output>
+</div>
+
+<script>
+// ─── Фазы событий ───────────────────────
+let propagationListeners = [];
+
+function clearPropagation() {
+  for (const [el, type, fn, opts] of propagationListeners) {
+    el.removeEventListener(type, fn, opts);
+  }
+  propagationListeners = [];
+  document.getElementById("out-propagation").textContent = "Обработчики удалены. Выбери режим.";
+}
+
+function setupPropagation(capture) {
+  clearPropagation();
+  const log = [];
+  const phase = capture ? "capture" : "bubble";
+  document.getElementById("out-propagation").textContent = `Режим: ${phase}. Кликни на INNER.`;
+
+  for (const id of ["outer", "middle", "inner"]) {
+    const el = document.getElementById(id);
+    const fn = (e) => {
+      const timestamp = new Date().toISOString().slice(11,23);
+      document.getElementById("out-propagation").textContent +=
+        `\n[${timestamp}] ${id.toUpperCase()} — target="${e.target.id}", currentTarget="${e.currentTarget.id}"`;
+    };
+    el.addEventListener("click", fn, { capture });
+    propagationListeners.push([el, "click", fn, { capture }]);
+  }
+}
+
+function setupStopPropagation() {
+  clearPropagation();
+  document.getElementById("out-propagation").textContent = "stopPropagation на MIDDLE. Кликни INNER.";
+
+  for (const [id, stop] of [["outer", false], ["middle", true], ["inner", false]]) {
+    const el = document.getElementById(id);
+    const fn = (e) => {
+      document.getElementById("out-propagation").textContent +=
+        `\n${id.toUpperCase()} сработал`;
+      if (stop) {
+        e.stopPropagation();
+        document.getElementById("out-propagation").textContent += " → stopPropagation()!";
+      }
+    };
+    el.addEventListener("click", fn);
+    propagationListeners.push([el, "click", fn, false]);
+  }
+}
+
+// ─── target vs currentTarget ────────────
+document.getElementById("target-demo").addEventListener("click", (e) => {
+  document.getElementById("out-target").textContent = [
+    `event.target:        <${e.target.tagName.toLowerCase()}> "${e.target.textContent.trim().slice(0,30)}"`,
+    `event.currentTarget: <${e.currentTarget.tagName.toLowerCase()}#${e.currentTarget.id}>`,
+    ``,
+    `target === currentTarget: ${e.target === e.currentTarget}`,
+    `  → target = куда кликнули`,
+    `  → currentTarget = где стоит обработчик`,
+  ].join("\n");
+});
+
+// ─── Делегирование ──────────────────────
+let itemCounter = 4;
+
+document.getElementById("delegation-list").addEventListener("click", (e) => {
+  const deleteBtn = e.target.closest("[data-action='delete']");
+  if (!deleteBtn) return;
+
+  const li = deleteBtn.closest("li");
+  const id = li.dataset.id;
+
+  // Анимация удаления
+  li.style.transition = "opacity 0.2s, transform 0.2s";
+  li.style.opacity = "0";
+  li.style.transform = "translateX(20px)";
+  setTimeout(() => li.remove(), 200);
+
+  document.getElementById("out-delegation").textContent =
+    `Удалён элемент id="${id}"\n` +
+    `event.target = <${e.target.tagName.toLowerCase()}>\n` +
+    `Найден через: e.target.closest("[data-action='delete']")`;
+});
+
+function addItem() {
+  const li = document.createElement("li");
+  li.dataset.id = itemCounter++;
+  li.innerHTML = `<span>Item ${itemCounter - 1} (динамический)</span>` +
+    `<button class="del-btn" data-action="delete">✕</button>`;
+  li.style.opacity = "0";
+  li.style.transition = "opacity 0.3s";
+  document.getElementById("delegation-list").appendChild(li);
+  requestAnimationFrame(() => li.style.opacity = "1");
+  document.getElementById("out-delegation").textContent =
+    `Добавлен Item ${itemCounter-1}\nОбработчик НЕ надо вешать заново — делегирование работает!`;
+}
+
+// ─── AbortController ────────────────────
+let ac = null;
+
+function startAC() {
+  if (ac) ac.abort();
+  ac = new AbortController();
+  const { signal } = ac;
+  const log = [];
+
+  document.getElementById("ac-btn1").addEventListener("click", () => {
+    log.unshift(`[click] Button 1`);
+    document.getElementById("out-ac").textContent = log.slice(0,8).join("\n");
+  }, { signal });
+
+  document.getElementById("ac-btn2").addEventListener("click", () => {
+    log.unshift(`[click] Button 2`);
+    document.getElementById("out-ac").textContent = log.slice(0,8).join("\n");
+  }, { signal });
+
+  document.getElementById("ac-target").addEventListener("mouseenter", () => {
+    log.unshift(`[mouseenter] Span`);
+    document.getElementById("out-ac").textContent = log.slice(0,8).join("\n");
+  }, { signal });
+
+  document.getElementById("out-ac").textContent = "3 обработчика добавлено (click ×2 + mouseenter)\nВсе с одним signal";
+}
+
+function stopAC() {
+  if (ac) {
+    ac.abort();
+    document.getElementById("out-ac").textContent = "ac.abort() → все 3 обработчика удалены одновременно!\nКнопки больше не реагируют.";
+  }
+}
+
+// ─── CustomEvent ────────────────────────
+let cartCount = 0;
+
+document.addEventListener("cart:change", (e) => {
+  const { delta, clear, count } = e.detail;
+  cartCount = clear ? 0 : cartCount + delta;
+  document.getElementById("cart-count").textContent = cartCount;
+  document.getElementById("out-custom").textContent = [
+    `Событие: "cart:change"`,
+    `e.detail: ${JSON.stringify(e.detail)}`,
+    `Новое значение: ${cartCount}`,
+    `bubbles: ${e.bubbles}`,
+  ].join("\n");
+});
+
+function emitCartEvent(delta, clear = false) {
+  document.dispatchEvent(new CustomEvent("cart:change", {
+    bubbles: true,
+    detail: { delta, clear, count: cartCount + delta },
+  }));
+}
+
+// ─── Keyboard events ────────────────────
+document.getElementById("key-input").addEventListener("keydown", (e) => {
+  document.getElementById("out-keyboard").textContent = [
+    `keydown:`,
+    `  e.key    = "${e.key}"    ← зависит от раскладки`,
+    `  e.code   = "${e.code}"  ← физическая клавиша`,
+    `  e.repeat = ${e.repeat}`,
+    `  modifiers: ctrl=${e.ctrlKey} shift=${e.shiftKey} alt=${e.altKey} meta=${e.metaKey}`,
+    ``,
+    `Используй e.code для hotkeys (не зависит от языка):`,
+    `  e.code === "KeyA"     ← всегда A, независимо от раскладки`,
+    `  e.code === "Space"`,
+    `  e.code === "Enter"`,
+  ].join("\n");
+  // Не глотаем стрелки чтобы поле работало нормально
+});
+
+// ─── Pointer events ─────────────────────
+const pointerArea = document.getElementById("pointer-area");
+pointerArea.addEventListener("pointermove", (e) => {
+  document.getElementById("out-pointer").textContent = [
+    `pointermove:`,
+    `  pointerType: "${e.pointerType}"  (mouse | touch | pen)`,
+    `  clientX/Y:   ${e.clientX.toFixed(0)}, ${e.clientY.toFixed(0)}`,
+    `  pressure:    ${e.pressure.toFixed(2)}  (0-1, стилус/тач)`,
+    `  buttons:     ${e.buttons}  (битовая маска: 1=left, 2=right, 4=middle)`,
+  ].join("\n");
+});
+
+pointerArea.addEventListener("pointerdown", (e) => {
+  pointerArea.style.background = "#1a4731";
+  pointerArea.setPointerCapture(e.pointerId); // захватить pointer для drag
+});
+
+pointerArea.addEventListener("pointerup", () => {
+  pointerArea.style.background = "#21262d";
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>DOM Manipulation</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: monospace; padding: 20px; background: #0d1117; color: #c9d1d9; }
+    .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
+    button { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 3px; font-family: monospace; }
+    button.red   { background: #b91c1c; }
+    button.blue  { background: #1d4ed8; }
+    button.amber { background: #92400e; }
+    output { display: block; background: #010409; padding: 10px; border-radius: 6px; margin-top: 8px; white-space: pre-wrap; font-size: 12px; min-height: 40px; }
+    h2 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 0; }
+    .demo-list { list-style: none; padding: 0; margin: 8px 0; }
+    .demo-list li { background: #21262d; padding: 8px 12px; margin: 4px 0; border-radius: 4px; }
+    .card { background: #1c2b3a; border: 1px solid #3b82f6; border-radius: 6px; padding: 12px; margin: 4px 0; display: inline-block; }
+    .timer { font-size: 24px; font-weight: bold; color: #3fb950; padding: 10px; }
+    template { display: none; }
+  </style>
+</head>
+<body>
+<h1>DOM Manipulation — демо</h1>
+
+<!-- ─── innerHTML vs textContent ─────── -->
+<div class="box">
+  <h2>innerHTML vs textContent — XSS демо</h2>
+  <input id="xss-input" value='<img src=x onerror="this.src=\x27\x27" style="display:none"> <b>bold text</b>'
+    style="width:100%;background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:8px;border-radius:4px;font-family:monospace">
+  <br><br>
+  <button onclick="demo_innerHTML()">innerHTML (небезопасно)</button>
+  <button onclick="demo_textContent()">textContent (безопасно)</button>
+  <div id="xss-output" style="background:#21262d;padding:12px;border-radius:6px;margin-top:8px;min-height:40px"></div>
+  <output id="out-xss"></output>
+</div>
+
+<!-- ─── DocumentFragment vs loop ──────── -->
+<div class="box">
+  <h2>DocumentFragment vs прямые вставки — бенчмарк</h2>
+  <button onclick="benchmark_direct(500)">Direct insert 500 элементов</button>
+  <button onclick="benchmark_fragment(500)">DocumentFragment 500 элементов</button>
+  <button onclick="benchmark_innerHTML(500)">innerHTML строка 500 элементов</button>
+  <button class="red" onclick="clearList()">Очистить</button>
+  <output id="out-bench"></output>
+  <ul id="bench-list" class="demo-list" style="max-height:150px;overflow-y:auto"></ul>
+</div>
+
+<!-- ─── insertAdjacentHTML ────────────── -->
+<div class="box">
+  <h2>insertAdjacentHTML — позиции вставки</h2>
+  <div id="adj-container" style="background:#1e3a5f;padding:16px;border-radius:6px;border:2px solid #3b82f6">
+    <strong id="adj-target" style="padding:8px;background:#4c1d95;border-radius:4px;display:inline-block">TARGET</strong>
+  </div>
+  <br><br>
+  <button onclick="adj('beforebegin')">beforebegin</button>
+  <button onclick="adj('afterbegin')">afterbegin</button>
+  <button onclick="adj('beforeend')">beforeend</button>
+  <button onclick="adj('afterend')">afterend</button>
+  <button class="red" onclick="resetAdj()">Сбросить</button>
+  <output id="out-adj">Нажми кнопку для вставки</output>
+</div>
+
+<!-- ─── Template element ──────────────── -->
+<div class="box">
+  <h2>&lt;template&gt; — безопасные шаблоны</h2>
+  <template id="card-template">
+    <div class="card">
+      <strong class="card-title">Title</strong>
+      <p class="card-body" style="margin:8px 0;color:#8b949e;font-size:13px">Body text</p>
+      <button class="card-btn">Action</button>
+    </div>
+  </template>
+
+  <button onclick="addCard()">Добавить карточку</button>
+  <button class="red" onclick="clearCards()">Очистить</button>
+  <div id="cards-container" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+  <output id="out-template"></output>
+</div>
+
+<!-- ─── Reflow thrashing ──────────────── -->
+<div class="box">
+  <h2>Layout Thrashing — демо</h2>
+  <p style="color:#8b949e;font-size:13px">Читаем offsetWidth 100 элементов и сразу пишем width → Thrashing. Или сначала все reads, потом all writes → OK.</p>
+  <div id="thrash-container" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+  <br>
+  <button onclick="setupThrash()">Создать 100 блоков</button>
+  <button class="red" onclick="badThrash()">❌ Layout Thrashing</button>
+  <button class="blue" onclick="goodThrash()">✅ Batch (read all → write all)</button>
+  <button onclick="rafThrash()">✅ requestAnimationFrame</button>
+  <output id="out-thrash"></output>
+</div>
+
+<!-- ─── Virtual DOM концепция ────────── -->
+<div class="box">
+  <h2>Мини Virtual DOM — diff & patch</h2>
+  <button onclick="vdom_demo()">Запустить демо</button>
+  <div style="display:flex;gap:16px;margin-top:8px">
+    <div style="flex:1">
+      <div style="color:#8b949e;font-size:11px;margin-bottom:4px">vDOM (JS)</div>
+      <div id="vdom-tree" style="background:#010409;padding:8px;border-radius:4px;font-size:12px;min-height:60px"></div>
+    </div>
+    <div style="flex:1">
+      <div style="color:#8b949e;font-size:11px;margin-bottom:4px">Real DOM</div>
+      <div id="real-dom" style="background:#010409;padding:8px;border-radius:4px;font-size:12px;min-height:60px"></div>
+    </div>
+  </div>
+  <output id="out-vdom"></output>
+</div>
+
+<script>
+// ─── innerHTML vs textContent ────────
+function demo_innerHTML() {
+  const target = document.getElementById("xss-output");
+  const input = document.getElementById("xss-input").value;
+  target.innerHTML = input; // XSS!
+  document.getElementById("out-xss").textContent =
+    "innerHTML: браузер парсит HTML-теги.\n" +
+    "Атрибуты onerror, onclick и т.д. — потенциальный XSS.\n" +
+    "Посмотри: жирный текст отображается как форматирование!";
+}
+
+function demo_textContent() {
+  const target = document.getElementById("xss-output");
+  const input = document.getElementById("xss-input").value;
+  target.textContent = input; // Безопасно
+  document.getElementById("out-xss").textContent =
+    "textContent: вставляет как plain text.\n" +
+    "Теги НЕ парсятся → XSS невозможен.\n" +
+    "Видишь буквальную строку с тегами — не HTML.";
+}
+
+// ─── Benchmark ──────────────────────
+function benchmark_direct(n) {
+  const list = document.getElementById("bench-list");
+  list.innerHTML = "";
+  const t = performance.now();
+  for (let i = 0; i < n; i++) {
+    const li = document.createElement("li");
+    li.textContent = `Item ${i}`;
+    list.appendChild(li);
+  }
+  const ms = (performance.now() - t).toFixed(2);
+  document.getElementById("out-bench").textContent =
+    `Direct appendChild × ${n}: ${ms}ms\n(каждый appendChild может вызвать reflow)`;
+}
+
+function benchmark_fragment(n) {
+  const list = document.getElementById("bench-list");
+  list.innerHTML = "";
+  const t = performance.now();
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < n; i++) {
+    const li = document.createElement("li");
+    li.textContent = `Item ${i}`;
+    frag.appendChild(li);
+  }
+  list.appendChild(frag); // один reflow
+  const ms = (performance.now() - t).toFixed(2);
+  document.getElementById("out-bench").textContent =
+    `DocumentFragment × ${n}: ${ms}ms\n(один appendChild → один reflow)`;
+}
+
+function benchmark_innerHTML(n) {
+  const list = document.getElementById("bench-list");
+  const t = performance.now();
+  list.innerHTML = Array.from({length: n}, (_, i) => `<li>Item ${i}</li>`).join("");
+  const ms = (performance.now() - t).toFixed(2);
+  document.getElementById("out-bench").textContent =
+    `innerHTML строка × ${n}: ${ms}ms\n(один parse + один reflow, быстро, но теряет listeners)`;
+}
+
+function clearList() {
+  document.getElementById("bench-list").innerHTML = "";
+  document.getElementById("out-bench").textContent = "Список очищен";
+}
+
+// ─── insertAdjacentHTML ─────────────
+let adjCounter = 0;
+const adjColors = ["#92400e", "#1a4731", "#1e3a5f", "#4c1d95"];
+
+function adj(position) {
+  const target = document.getElementById("adj-target");
+  const color = adjColors[adjCounter++ % adjColors.length];
+  const html = `<span style="padding:6px 10px;background:${color};border-radius:4px;margin:2px;display:inline-block;font-size:12px">${position} #${adjCounter}</span>`;
+  target.insertAdjacentHTML(position, html);
+  document.getElementById("out-adj").textContent =
+    `insertAdjacentHTML("${position}", ...) — добавлен элемент #${adjCounter}\n` +
+    `beforebegin = перед контейнером\n` +
+    `afterbegin  = первый ребёнок\n` +
+    `beforeend   = последний ребёнок\n` +
+    `afterend    = после контейнера`;
+}
+
+function resetAdj() {
+  document.getElementById("adj-container").innerHTML =
+    '<strong id="adj-target" style="padding:8px;background:#4c1d95;border-radius:4px;display:inline-block">TARGET</strong>';
+  adjCounter = 0;
+  document.getElementById("out-adj").textContent = "Сброшено";
+}
+
+// ─── Template element ───────────────
+let cardId = 0;
+
+function addCard() {
+  const template = document.getElementById("card-template");
+  const clone = template.content.cloneNode(true);
+
+  const id = ++cardId;
+  clone.querySelector(".card-title").textContent = `Card #${id}`;
+  clone.querySelector(".card-body").textContent = `Описание карточки ${id}`;
+  clone.querySelector(".card-btn").textContent = `Action #${id}`;
+  clone.querySelector(".card-btn").addEventListener("click", () => {
+    alert(`Клик на карточке #${id}`);
+  });
+
+  document.getElementById("cards-container").appendChild(clone);
+  document.getElementById("out-template").textContent =
+    `Добавлена карточка #${id}\n\n` +
+    `<template> преимущества:\n` +
+    `  - Не исполняется при загрузке\n` +
+    `  - cloneNode(true) безопасен\n` +
+    `  - Event listeners вешаем на клон ПЕРЕД вставкой в DOM\n` +
+    `  - Лучше innerHTML для повторяющихся структур`;
+}
+
+function clearCards() {
+  document.getElementById("cards-container").innerHTML = "";
+  cardId = 0;
+}
+
+// ─── Layout Thrashing ───────────────
+function setupThrash() {
+  const container = document.getElementById("thrash-container");
+  container.innerHTML = "";
+  for (let i = 0; i < 100; i++) {
+    const el = document.createElement("div");
+    el.style.cssText = "width:20px;height:20px;background:#3b82f6;border-radius:2px";
+    container.appendChild(el);
+  }
+  document.getElementById("out-thrash").textContent = "100 блоков создано. Запусти тест.";
+}
+
+function badThrash() {
+  const boxes = document.querySelectorAll("#thrash-container div");
+  if (!boxes.length) { setupThrash(); return; }
+
+  // Сброс
+  boxes.forEach(b => b.style.width = "20px");
+
+  const t = performance.now();
+  for (const box of boxes) {
+    const w = box.offsetWidth;           // READ  → форсирует reflow
+    box.style.width = (w * 1.5) + "px"; // WRITE → инвалидирует layout
+    // следующая итерация: READ → снова reflow!
+  }
+  const ms = (performance.now() - t).toFixed(2);
+  document.getElementById("out-thrash").textContent =
+    `❌ Layout Thrashing: ${ms}ms\n` +
+    `Read + Write в цикле = ${boxes.length} принудительных reflow\n` +
+    `Браузер не может батчить layout между итерациями`;
+}
+
+function goodThrash() {
+  const boxes = document.querySelectorAll("#thrash-container div");
+  if (!boxes.length) { setupThrash(); return; }
+
+  boxes.forEach(b => b.style.width = "20px");
+
+  const t = performance.now();
+  // Сначала ВСЕ чтения
+  const widths = Array.from(boxes, b => b.offsetWidth); // один reflow
+  // Потом ВСЕ записи
+  for (let i = 0; i < boxes.length; i++) {
+    boxes[i].style.width = (widths[i] * 1.5) + "px";  // нет чтений → нет reflow
+  }
+  const ms = (performance.now() - t).toFixed(2);
+  document.getElementById("out-thrash").textContent =
+    `✅ Batch: ${ms}ms\n` +
+    `Все reads → один reflow\n` +
+    `Все writes → браузер батчит\n` +
+    `Разница может быть 2-10x на большом DOM`;
+}
+
+function rafThrash() {
+  const boxes = document.querySelectorAll("#thrash-container div");
+  if (!boxes.length) { setupThrash(); return; }
+
+  boxes.forEach(b => { b.style.width = "20px"; b.style.transition = "width 0.3s"; });
+
+  requestAnimationFrame(() => {
+    // В rAF: reads в начале, writes
+    const widths = Array.from(boxes, b => b.offsetWidth);
+    requestAnimationFrame(() => {
+      for (let i = 0; i < boxes.length; i++) {
+        boxes[i].style.width = (widths[i] * 2) + "px";
+      }
+    });
+  });
+
+  document.getElementById("out-thrash").textContent =
+    `✅ requestAnimationFrame:\n` +
+    `Первый rAF: читаем перед началом кадра (layout актуален)\n` +
+    `Второй rAF: пишем в начале следующего кадра\n` +
+    `Браузер анимирует плавно, без janky-кадров`;
+}
+
+// ─── Mini Virtual DOM ───────────────
+function vdom_demo() {
+  // Простая реализация vDOM
+  const h = (tag, props, ...children) => ({ tag, props: props || {}, children: children.flat() });
+
+  function renderNode(vnode) {
+    if (typeof vnode === "string" || typeof vnode === "number") {
+      return document.createTextNode(String(vnode));
+    }
+    const el = document.createElement(vnode.tag);
+    for (const [k, v] of Object.entries(vnode.props)) {
+      if (k === "style") Object.assign(el.style, v);
+      else el.setAttribute(k, v);
+    }
+    vnode.children.forEach(child => el.append(renderNode(child)));
+    vnode._el = el; // сохраняем ссылку на реальный DOM
+    return el;
+  }
+
+  // Начальный vDOM
+  const vdom1 = h("ul", { style: { listStyle: "none", padding: "0" } },
+    h("li", { style: { padding: "4px", background: "#1a4731", borderRadius: "4px", marginBottom: "4px" } }, "Item A"),
+    h("li", { style: { padding: "4px", background: "#1e3a5f", borderRadius: "4px", marginBottom: "4px" } }, "Item B"),
+    h("li", { style: { padding: "4px", background: "#4c1d95", borderRadius: "4px", marginBottom: "4px" } }, "Item C"),
+  );
+
+  const container = document.getElementById("real-dom");
+  container.innerHTML = "";
+  container.appendChild(renderNode(vdom1));
+
+  // Новый vDOM (Item B изменился, Item D добавлен)
+  const vdom2 = h("ul", { style: { listStyle: "none", padding: "0" } },
+    h("li", { style: { padding: "4px", background: "#1a4731", borderRadius: "4px", marginBottom: "4px" } }, "Item A"),
+    h("li", { style: { padding: "4px", background: "#92400e", borderRadius: "4px", marginBottom: "4px" } }, "Item B (changed!)"),
+    h("li", { style: { padding: "4px", background: "#4c1d95", borderRadius: "4px", marginBottom: "4px" } }, "Item C"),
+    h("li", { style: { padding: "4px", background: "#1a3a4a", borderRadius: "4px", marginBottom: "4px" } }, "Item D (new)"),
+  );
+
+  // Простой diff (только для примера)
+  const diffs = [];
+  const maxLen = Math.max(vdom1.children.length, vdom2.children.length);
+  for (let i = 0; i < maxLen; i++) {
+    const old = vdom1.children[i];
+    const nw = vdom2.children[i];
+    if (!old) diffs.push(`CREATE: "${nw.children[0]}"`);
+    else if (!nw) diffs.push(`REMOVE: "${old.children[0]}"`);
+    else if (old.children[0] !== nw.children[0]) diffs.push(`UPDATE [${i}]: "${old.children[0]}" → "${nw.children[0]}"`);
+    else diffs.push(`SKIP [${i}]: "${old.children[0]}" — без изменений`);
+  }
+
+  // Применяем изменения
+  setTimeout(() => {
+    container.innerHTML = "";
+    container.appendChild(renderNode(vdom2));
+  }, 300);
+
+  document.getElementById("vdom-tree").textContent =
+    "vdom1 → vdom2\n" + diffs.join("\n");
+
+  document.getElementById("out-vdom").textContent =
+    `Diff результат:\n${diffs.join("\n")}\n\n` +
+    `React делает это же, но:\n` +
+    `  - С ключами (key prop) для O(n) diff\n` +
+    `  - С Fiber для прерываемого рендеринга\n` +
+    `  - Батчит обновления состояния`;
+}
+</script>
+</body>
+</html>

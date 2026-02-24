@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Browser APIs</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: monospace; padding: 20px; background: #0d1117; color: #c9d1d9; }
+    .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
+    button { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 3px; font-family: monospace; }
+    button.red   { background: #b91c1c; }
+    button.blue  { background: #1d4ed8; }
+    button.amber { background: #92400e; }
+    output { display: block; background: #010409; padding: 10px; border-radius: 6px; margin-top: 8px; white-space: pre-wrap; font-size: 12px; min-height: 40px; max-height: 200px; overflow-y: auto; }
+    input, textarea { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 6px 10px; border-radius: 4px; font-family: monospace; }
+    h2 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 0; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  </style>
+</head>
+<body>
+<h1>Browser APIs — интерактивный справочник</h1>
+
+<!-- ─── localStorage ─────────────────── -->
+<div class="box">
+  <h2>localStorage / sessionStorage</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+    <input id="ls-key" placeholder="key" style="width:120px">
+    <input id="ls-val" placeholder="value (JSON)" style="width:200px">
+  </div>
+  <button onclick="ls_set()">setItem</button>
+  <button onclick="ls_get()">getItem</button>
+  <button onclick="ls_remove()">removeItem</button>
+  <button onclick="ls_all()">Показать всё</button>
+  <button class="red" onclick="ls_clear()">clear()</button>
+  <button class="blue" onclick="ls_session()">sessionStorage demo</button>
+  <output id="out-ls"></output>
+</div>
+
+<!-- ─── History API ──────────────────── -->
+<div class="box">
+  <h2>History API — SPA навигация</h2>
+  <div id="router-view" style="background:#21262d;padding:12px;border-radius:6px;margin-bottom:8px">
+    Текущая "страница": <strong id="current-route">/</strong>
+  </div>
+  <button onclick="routeTo('/')">/ Home</button>
+  <button onclick="routeTo('/about')">/ About</button>
+  <button onclick="routeTo('/users/42')">/ Users/42</button>
+  <button onclick="history.back()">⬅ Back</button>
+  <button onclick="history.forward()">➡ Forward</button>
+  <output id="out-history"></output>
+</div>
+
+<!-- ─── URLSearchParams ──────────────── -->
+<div class="box">
+  <h2>URL & URLSearchParams</h2>
+  <input id="url-input" value="https://api.example.com/search?q=hello&page=2&tag=js&tag=ts" style="width:100%">
+  <br><br>
+  <button onclick="parseUrl()">Распарсить URL</button>
+  <button onclick="buildUrl()">Построить URL из объекта</button>
+  <output id="out-url"></output>
+</div>
+
+<!-- ─── Web Worker (inline) ──────────── -->
+<div class="box">
+  <h2>Web Worker — вычисления в отдельном потоке</h2>
+  <p style="color:#8b949e;font-size:13px">
+    Нажми "Блокирующий" — UI зависнет на 2 секунды.<br>
+    Нажми "Worker" — тяжёлая задача в отдельном потоке, UI остаётся отзывчивым.
+  </p>
+  <button class="red" onclick="blockingTask()">❌ Блокирующий (main thread)</button>
+  <button class="blue" onclick="workerTask()">✅ Web Worker (background thread)</button>
+  <input id="worker-counter" placeholder="Кликай сюда пока идёт задача" style="margin-left:8px;width:250px">
+  <output id="out-worker">Нажми кнопку</output>
+</div>
+
+<!-- ─── BroadcastChannel ─────────────── -->
+<div class="box">
+  <h2>BroadcastChannel — связь между вкладками</h2>
+  <p style="color:#8b949e;font-size:13px">
+    Открой эту страницу в 2-3 вкладках. Сообщения будут видны во всех вкладках кроме отправившей.
+  </p>
+  <input id="bc-message" placeholder="Сообщение" style="width:250px">
+  <button onclick="bc_send()">Отправить</button>
+  <button class="red" onclick="bc_close()">Close channel</button>
+  <output id="out-bc">Канал активен. Открой несколько вкладок.</output>
+</div>
+
+<!-- ─── Clipboard ────────────────────── -->
+<div class="box">
+  <h2>Clipboard API</h2>
+  <textarea id="clip-text" rows="3" style="width:100%;margin-bottom:8px">Hello from Clipboard API!</textarea>
+  <button onclick="clip_write()">📋 Copy to Clipboard</button>
+  <button onclick="clip_read()">📄 Read from Clipboard</button>
+  <output id="out-clip"></output>
+</div>
+
+<!-- ─── Текущий URL ───────────────────── -->
+<div class="box">
+  <h2>window.location — текущий URL</h2>
+  <button onclick="showLocation()">Показать location</button>
+  <output id="out-location"></output>
+</div>
+
+<script>
+// ─── localStorage ───────────────────────
+function ls_set() {
+  const key = document.getElementById("ls-key").value;
+  const val = document.getElementById("ls-val").value;
+  if (!key) return;
+  try {
+    localStorage.setItem(key, JSON.stringify(JSON.parse(val)));
+    document.getElementById("out-ls").textContent = `setItem("${key}", ...) — OK\nТип: ${typeof JSON.parse(val)}`;
+  } catch {
+    localStorage.setItem(key, val);
+    document.getElementById("out-ls").textContent = `setItem("${key}", "${val}") — как строка`;
+  }
+}
+
+function ls_get() {
+  const key = document.getElementById("ls-key").value;
+  const raw = localStorage.getItem(key);
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch { parsed = raw; }
+  document.getElementById("out-ls").textContent =
+    raw === null
+      ? `getItem("${key}") → null (не найден)`
+      : `getItem("${key}") → ${JSON.stringify(parsed)}\n(raw string: "${raw}")`;
+}
+
+function ls_remove() {
+  const key = document.getElementById("ls-key").value;
+  localStorage.removeItem(key);
+  document.getElementById("out-ls").textContent = `removeItem("${key}") — удалён`;
+}
+
+function ls_all() {
+  const items = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    items.push(`  "${k}": ${localStorage.getItem(k)}`);
+  }
+  document.getElementById("out-ls").textContent =
+    `localStorage (${localStorage.length} записей):\n` +
+    (items.length ? items.join("\n") : "  (пусто)");
+}
+
+function ls_clear() {
+  localStorage.clear();
+  document.getElementById("out-ls").textContent = "localStorage.clear() — всё удалено";
+}
+
+function ls_session() {
+  sessionStorage.setItem("tab-id", Math.random().toString(36).slice(2));
+  sessionStorage.setItem("opened-at", new Date().toISOString());
+  document.getElementById("out-ls").textContent = [
+    "sessionStorage — данные только в этой вкладке",
+    `tab-id: ${sessionStorage.getItem("tab-id")}`,
+    `opened-at: ${sessionStorage.getItem("opened-at")}`,
+    "",
+    "Открой новую вкладку с этой страницей —",
+    "tab-id будет ДРУГИМ (изолировано).",
+    "Перезагрузи вкладку — данные СОХРАНЯТСЯ.",
+    "Закрой вкладку — данные ПРОПАДУТ.",
+  ].join("\n");
+}
+
+// ─── History API ────────────────────────
+window.addEventListener("popstate", (e) => {
+  const path = window.location.pathname;
+  document.getElementById("current-route").textContent = path;
+  document.getElementById("out-history").textContent +=
+    `\n[popstate] path: ${path}, state: ${JSON.stringify(e.state)}`;
+});
+
+function routeTo(path) {
+  const state = { route: path, ts: Date.now() };
+  history.pushState(state, "", path);
+  document.getElementById("current-route").textContent = path;
+  document.getElementById("out-history").textContent = [
+    `history.pushState(${JSON.stringify(state)}, "", "${path}")`,
+    `window.location.pathname: ${window.location.pathname}`,
+    `history.length: ${history.length}`,
+    ``,
+    `Используй Back/Forward кнопки браузера или кнопки выше.`,
+    `popstate сработает при back/forward.`,
+  ].join("\n");
+}
+
+// ─── URLSearchParams ────────────────────
+function parseUrl() {
+  const urlStr = document.getElementById("url-input").value;
+  try {
+    const url = new URL(urlStr);
+    const lines = [
+      `=== URL Parsed ===`,
+      `protocol: "${url.protocol}"`,
+      `host:     "${url.host}"`,
+      `pathname: "${url.pathname}"`,
+      `search:   "${url.search}"`,
+      `hash:     "${url.hash}"`,
+      ``,
+      `=== URLSearchParams ===`,
+    ];
+    url.searchParams.forEach((val, key) => {
+      lines.push(`  ${key}: "${val}"`);
+    });
+    const allTags = url.searchParams.getAll("tag");
+    if (allTags.length > 1) {
+      lines.push(`  getAll("tag"): [${allTags.map(t => `"${t}"`).join(", ")}]`);
+    }
+    document.getElementById("out-url").textContent = lines.join("\n");
+  } catch(e) {
+    document.getElementById("out-url").textContent = `Ошибка: ${e.message}`;
+  }
+}
+
+function buildUrl() {
+  const params = {
+    search: "TypeScript",
+    page: 1,
+    limit: 20,
+    sort: "date",
+    filter: null,  // null будет пропущен
+  };
+  const url = new URL("/api/posts", "https://example.com");
+  for (const [k, v] of Object.entries(params)) {
+    if (v != null) url.searchParams.set(k, v);
+  }
+  document.getElementById("out-url").textContent = [
+    `Объект: ${JSON.stringify(params, null, 2)}`,
+    ``,
+    `new URL("/api/posts", "https://example.com")`,
+    `+ searchParams.set(k, v) для всех не-null`,
+    ``,
+    `Результат:`,
+    url.href,
+  ].join("\n");
+}
+
+// ─── Web Worker (inline) ────────────────
+const workerCode = `
+  self.onmessage = function(e) {
+    if (e.data.type === "heavy") {
+      const n = e.data.n;
+      // Проверка числа на простоту (O(√n))
+      function isPrime(n) {
+        if (n < 2) return false;
+        for (let i = 2; i <= Math.sqrt(n); i++) {
+          if (n % i === 0) return false;
+        }
+        return true;
+      }
+      // Считаем все простые до n
+      let count = 0;
+      for (let i = 2; i <= n; i++) {
+        if (isPrime(i)) count++;
+      }
+      self.postMessage({ type: "done", count, n });
+    }
+  };
+`;
+
+const workerBlob = new Blob([workerCode], { type: "application/javascript" });
+const workerUrl = URL.createObjectURL(workerBlob);
+let worker = null;
+
+function blockingTask() {
+  const out = document.getElementById("out-worker");
+  out.textContent = "Блокирую main thread на ~2 секунды...\n(попробуй кликать на input)";
+
+  // SetTimeout чтобы сообщение успело отрисоваться
+  setTimeout(() => {
+    const t = performance.now();
+    // Простые до 2_000_000 — блокирует
+    function isPrime(n) {
+      if (n < 2) return false;
+      for (let i = 2; i <= Math.sqrt(n); i++) if (n % i === 0) return false;
+      return true;
+    }
+    let count = 0;
+    for (let i = 2; i <= 2_000_000; i++) if (isPrime(i)) count++;
+    const ms = (performance.now() - t).toFixed(0);
+    out.textContent = `❌ Main thread заблокирован!\nПростых до 2М: ${count}\nВремя: ${ms}ms\n\nUI не реагировал всё это время.`;
+  }, 100);
+}
+
+function workerTask() {
+  const out = document.getElementById("out-worker");
+  out.textContent = "Worker запущен... (кликай на input — UI отзывчив!)";
+
+  if (worker) worker.terminate();
+  worker = new Worker(workerUrl);
+  const t = performance.now();
+
+  worker.onmessage = (e) => {
+    const ms = (performance.now() - t).toFixed(0);
+    out.textContent = `✅ Web Worker завершил работу!\nПростых до ${e.data.n}: ${e.data.count}\nВремя: ${ms}ms\n\nMain thread не блокировался.`;
+  };
+
+  worker.postMessage({ type: "heavy", n: 2_000_000 });
+}
+
+// ─── BroadcastChannel ───────────────────
+const channel = new BroadcastChannel("demo-channel");
+const bcLog = [];
+
+channel.onmessage = (e) => {
+  bcLog.unshift(`← [получено] ${JSON.stringify(e.data)}`);
+  document.getElementById("out-bc").textContent =
+    `Канал: "demo-channel"\n\n` + bcLog.slice(0, 10).join("\n");
+};
+
+function bc_send() {
+  const msg = document.getElementById("bc-message").value || "ping";
+  const data = { text: msg, tab: window.name || "tab-" + Math.random().toString(36).slice(2,6), ts: Date.now() };
+  channel.postMessage(data);
+  bcLog.unshift(`→ [отправлено] ${JSON.stringify(data)}`);
+  document.getElementById("out-bc").textContent =
+    `Канал: "demo-channel"\nОтправлено во все другие вкладки!\n\n` + bcLog.slice(0, 10).join("\n");
+}
+
+function bc_close() {
+  channel.close();
+  document.getElementById("out-bc").textContent = "Канал закрыт (channel.close()).\nСообщения больше не принимаются.";
+}
+
+// ─── Clipboard ──────────────────────────
+async function clip_write() {
+  const text = document.getElementById("clip-text").value;
+  try {
+    await navigator.clipboard.writeText(text);
+    document.getElementById("out-clip").textContent = `✅ Скопировано в буфер:\n"${text}"`;
+  } catch(e) {
+    document.getElementById("out-clip").textContent = `❌ Ошибка: ${e.message}\n(Требуется user gesture и HTTPS)`;
+  }
+}
+
+async function clip_read() {
+  try {
+    const text = await navigator.clipboard.readText();
+    document.getElementById("out-clip").textContent = `✅ Прочитано из буфера:\n"${text}"`;
+  } catch(e) {
+    document.getElementById("out-clip").textContent = `❌ Ошибка: ${e.message}\n(Требуется Permission: clipboard-read)`;
+  }
+}
+
+// ─── window.location ────────────────────
+function showLocation() {
+  const loc = window.location;
+  document.getElementById("out-location").textContent = [
+    `href:     "${loc.href}"`,
+    `protocol: "${loc.protocol}"`,
+    `host:     "${loc.host}"`,
+    `hostname: "${loc.hostname}"`,
+    `port:     "${loc.port || "(default)"}"`,
+    `pathname: "${loc.pathname}"`,
+    `search:   "${loc.search || "(empty)"}"`,
+    `hash:     "${loc.hash || "(empty)"}"`,
+    `origin:   "${loc.origin}"`,
+  ].join("\n");
+}
+</script>
+</body>
+</html>

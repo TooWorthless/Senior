@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>DOM Basics</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #0d1117; color: #c9d1d9; }
+    .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
+    .item { color: #58a6ff; }
+    .active { color: #3fb950; }
+    button { background: #238636; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin: 4px; }
+    output { display: block; background: #010409; padding: 12px; border-radius: 6px; margin-top: 8px; white-space: pre-wrap; font-size: 13px; }
+    h2 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+    span.tag  { color: #ff7b72; }
+    span.str  { color: #a5d6ff; }
+    span.num  { color: #79c0ff; }
+  </style>
+</head>
+<body>
+
+<h1>DOM Basics — интерактивный справочник</h1>
+
+<!-- Тестовое дерево -->
+<div id="tree" class="box" data-demo="true">
+  <h2 id="title">Tree Root</h2>
+  <ul id="list">
+    <li class="item" data-id="1">Item 1</li>
+    <li class="item active" data-id="2">Item 2</li>
+    <li class="item" data-id="3">Item 3</li>
+  </ul>
+  <p id="para">Some <strong>bold</strong> and <em>italic</em> text.</p>
+</div>
+
+<!-- ─── Node Types ───────────────────────── -->
+<div class="box">
+  <h2>Node Types</h2>
+  <button onclick="showNodeTypes()">Показать типы узлов</button>
+  <output id="out-types"></output>
+</div>
+
+<!-- ─── Selectors ───────────────────────── -->
+<div class="box">
+  <h2>Selectors: querySelector vs getElementsBy*</h2>
+  <button onclick="showSelectors()">Запустить</button>
+  <output id="out-selectors"></output>
+</div>
+
+<!-- ─── Live vs Static ──────────────────── -->
+<div class="box">
+  <h2>Live vs Static коллекция</h2>
+  <button onclick="showLiveVsStatic()">Демо</button>
+  <output id="out-live"></output>
+</div>
+
+<!-- ─── Traversal ───────────────────────── -->
+<div class="box">
+  <h2>Обход дерева</h2>
+  <button onclick="showTraversal()">Запустить</button>
+  <output id="out-traversal"></output>
+</div>
+
+<!-- ─── Geometry ────────────────────────── -->
+<div class="box">
+  <h2>Геометрия элементов</h2>
+  <button onclick="showGeometry()">Показать getBoundingClientRect</button>
+  <output id="out-geo"></output>
+</div>
+
+<!-- ─── classList ───────────────────────── -->
+<div class="box">
+  <h2>classList API</h2>
+  <div id="classTarget" style="padding:8px; border-radius:4px; background:#21262d; display:inline-block;">
+    Target element (class="item")
+  </div>
+  <br><br>
+  <button onclick="classList_demo('add', 'active')">add("active")</button>
+  <button onclick="classList_demo('remove', 'active')">remove("active")</button>
+  <button onclick="classList_demo('toggle', 'active')">toggle("active")</button>
+  <button onclick="classList_demo('contains', 'active')">contains("active")?</button>
+  <output id="out-classList"></output>
+</div>
+
+<!-- ─── dataset ─────────────────────────── -->
+<div class="box">
+  <h2>dataset (data-* атрибуты)</h2>
+  <button onclick="showDataset()">Показать</button>
+  <output id="out-dataset"></output>
+</div>
+
+<script>
+// Утилита вывода
+function out(id, text) {
+  document.getElementById(id).textContent = text;
+}
+
+// ─── Node Types ─────────────────────────
+function showNodeTypes() {
+  const tree = document.getElementById("tree");
+  let result = "";
+
+  function walk(node, depth = 0) {
+    const indent = "  ".repeat(depth);
+    const types = {1:"ELEMENT",3:"TEXT",8:"COMMENT",9:"DOCUMENT",11:"FRAGMENT"};
+    const type = types[node.nodeType] ?? node.nodeType;
+    const name = node.nodeName;
+    const val = node.nodeType === 3 ? ` "${node.textContent.trim().slice(0,20)}"` : "";
+    if (node.nodeType === 3 && !node.textContent.trim()) return; // пропускаем пустые TextNodes
+    result += `${indent}[${type}] ${name}${val}\n`;
+    node.childNodes.forEach(child => walk(child, depth + 1));
+  }
+
+  walk(tree);
+  out("out-types", result);
+}
+
+// ─── Selectors ──────────────────────────
+function showSelectors() {
+  const lines = [];
+
+  // querySelector — первый совпавший
+  const first = document.querySelector(".item");
+  lines.push(`querySelector(".item") → ${first?.textContent}`);
+
+  // querySelectorAll — NodeList (static)
+  const all = document.querySelectorAll(".item");
+  lines.push(`querySelectorAll(".item") → NodeList[${all.length}]`);
+  lines.push(`  instanceof NodeList: ${all instanceof NodeList}`);
+
+  // getElementsByClassName — HTMLCollection (live!)
+  const byClass = document.getElementsByClassName("item");
+  lines.push(`getElementsByClassName("item") → HTMLCollection[${byClass.length}]`);
+
+  // getElementById
+  const byId = document.getElementById("title");
+  lines.push(`getElementById("title") → <${byId?.tagName.toLowerCase()}> "${byId?.textContent}"`);
+
+  // closest
+  const item2 = document.querySelector("[data-id='2']");
+  const closestList = item2?.closest("ul");
+  lines.push(`[data-id='2'].closest("ul") → <${closestList?.tagName.toLowerCase()}#${closestList?.id}>`);
+
+  // matches
+  lines.push(`[data-id='2'].matches(".active") → ${item2?.matches(".active")}`);
+  lines.push(`[data-id='2'].matches(".item") → ${item2?.matches(".item")}`);
+  lines.push(`[data-id='2'].matches(".item.active") → ${item2?.matches(".item.active")}`);
+
+  // contextual search
+  const list = document.getElementById("list");
+  const listItems = list.querySelectorAll("li");
+  lines.push(`ul.querySelectorAll("li") → ${listItems.length} items (только внутри ul)`);
+
+  out("out-selectors", lines.join("\n"));
+}
+
+// ─── Live vs Static ─────────────────────
+function showLiveVsStatic() {
+  // Создаём временный контейнер для демо
+  const container = document.createElement("div");
+  for (let i = 1; i <= 3; i++) {
+    const d = document.createElement("div");
+    d.className = "demo-live";
+    d.textContent = `div-${i}`;
+    container.appendChild(d);
+  }
+  document.body.appendChild(container);
+
+  const live = container.getElementsByClassName("demo-live"); // HTMLCollection — LIVE
+  const stat = container.querySelectorAll(".demo-live");       // NodeList — STATIC
+
+  const lines = [];
+  lines.push(`Начальное состояние:`);
+  lines.push(`  live.length = ${live.length}, static.length = ${stat.length}`);
+
+  // Добавляем элемент
+  const newEl = document.createElement("div");
+  newEl.className = "demo-live";
+  newEl.textContent = "div-4 (добавлен)";
+  container.appendChild(newEl);
+
+  lines.push(`\nПосле добавления нового .demo-live:`);
+  lines.push(`  live.length = ${live.length}  ← обновилась!`);
+  lines.push(`  static.length = ${stat.length}  ← НЕ изменилась`);
+
+  // Удаляем первый
+  live[0].remove();
+  lines.push(`\nПосле удаления первого элемента:`);
+  lines.push(`  live.length = ${live.length}  ← обновилась!`);
+  lines.push(`  static.length = ${stat.length}  ← всё ещё 3`);
+
+  // Убираем контейнер
+  container.remove();
+
+  out("out-live", lines.join("\n"));
+}
+
+// ─── Traversal ──────────────────────────
+function showTraversal() {
+  const list = document.getElementById("list");
+  const second = list.children[1]; // <li class="item active">
+
+  const lines = [];
+  lines.push("=== От #list ===");
+  lines.push(`parentElement.id: ${list.parentElement?.id}`);
+  lines.push(`children.length: ${list.children.length}`);
+  lines.push(`firstElementChild: "${list.firstElementChild?.textContent}"`);
+  lines.push(`lastElementChild: "${list.lastElementChild?.textContent}"`);
+  lines.push(`childElementCount: ${list.childElementCount}`);
+
+  lines.push("\n=== От второго <li> ===");
+  lines.push(`textContent: "${second.textContent}"`);
+  lines.push(`previousElementSibling: "${second.previousElementSibling?.textContent}"`);
+  lines.push(`nextElementSibling: "${second.nextElementSibling?.textContent}"`);
+  lines.push(`parentElement.id: "${second.parentElement?.id}"`);
+
+  lines.push("\n=== firstChild vs firstElementChild ===");
+  const para = document.getElementById("para");
+  lines.push(`para.firstChild.nodeType: ${para.firstChild?.nodeType} (3=TEXT)`);
+  lines.push(`para.firstChild текст: "${para.firstChild?.textContent?.trim()}"`);
+  lines.push(`para.firstElementChild.tagName: ${para.firstElementChild?.tagName}`);
+  lines.push(`  → firstChild = TextNode "Some ", firstElementChild = <strong>`);
+
+  lines.push("\n=== contains ===");
+  const tree = document.getElementById("tree");
+  lines.push(`tree.contains(second): ${tree.contains(second)}`);
+  lines.push(`second.contains(tree): ${second.contains(tree)}`);
+
+  out("out-traversal", lines.join("\n"));
+}
+
+// ─── Geometry ───────────────────────────
+function showGeometry() {
+  const title = document.getElementById("title");
+  const rect = title.getBoundingClientRect();
+  const lines = [
+    "title.getBoundingClientRect():",
+    `  top:    ${rect.top.toFixed(1)}px (от верха viewport)`,
+    `  left:   ${rect.left.toFixed(1)}px`,
+    `  width:  ${rect.width.toFixed(1)}px`,
+    `  height: ${rect.height.toFixed(1)}px`,
+    `  bottom: ${rect.bottom.toFixed(1)}px`,
+    ``,
+    `title.offsetTop:    ${title.offsetTop}px (от offsetParent)`,
+    `title.offsetLeft:   ${title.offsetLeft}px`,
+    `title.offsetWidth:  ${title.offsetWidth}px (с border)`,
+    `title.clientWidth:  ${title.clientWidth}px (с padding, без border)`,
+    ``,
+    `Абсолютная позиция на странице:`,
+    `  top + scrollY = ${(rect.top + window.scrollY).toFixed(1)}px`,
+    `  left + scrollX = ${(rect.left + window.scrollX).toFixed(1)}px`,
+  ];
+  out("out-geo", lines.join("\n"));
+}
+
+// ─── classList ──────────────────────────
+function classList_demo(method, cls) {
+  const el = document.getElementById("classTarget");
+  let result;
+  if (method === "contains") {
+    result = el.classList.contains(cls);
+    el.style.background = result ? "#1a4731" : "#21262d";
+  } else {
+    el.classList[method](cls);
+    result = el.classList.contains(cls);
+    el.style.background = result ? "#1a4731" : "#21262d";
+  }
+  out("out-classList", [
+    `classList.${method}("${cls}")`,
+    `classList: "${el.className}"`,
+    `contains("active"): ${el.classList.contains("active")}`,
+    `classes: [${[...el.classList].join(", ")}]`,
+  ].join("\n"));
+}
+
+// ─── dataset ────────────────────────────
+function showDataset() {
+  // <li class="item active" data-id="2">
+  const el = document.querySelector("[data-id='2']");
+  const lines = [
+    `Element: <li class="${el.className}" data-id="${el.dataset.id}">`,
+    ``,
+    `el.dataset.id → "${el.dataset.id}"`,
+    `el.getAttribute("data-id") → "${el.getAttribute("data-id")}"`,
+    ``,
+    "Добавляем data-user-role='admin':",
+  ];
+  el.dataset.userRole = "admin";
+  lines.push(`  el.dataset.userRole = "admin"`);
+  lines.push(`  HTML теперь: data-user-role="admin" (kebab-case!)`);
+  lines.push(`  getAttribute("data-user-role") → "${el.getAttribute("data-user-role")}"`);
+
+  // Итерация по dataset
+  lines.push("\nВсе data-атрибуты:");
+  for (const [key, val] of Object.entries(el.dataset)) {
+    lines.push(`  dataset.${key} = "${val}"`);
+  }
+
+  out("out-dataset", lines.join("\n"));
+}
+</script>
+</body>
+</html>
