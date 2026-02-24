@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Client</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: monospace; padding: 20px; background: #0d1117; color: #c9d1d9; max-width: 900px; }
+    .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
+    button { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 3px; font-family: monospace; }
+    button.red   { background: #b91c1c; }
+    button.blue  { background: #1d4ed8; }
+    button.amber { background: #92400e; }
+    button:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
+    input, textarea { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 6px 10px; border-radius: 4px; font-family: monospace; }
+    h2 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 0; }
+    .log { background: #010409; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-size: 12px; }
+    .log-entry { padding: 3px 0; border-bottom: 1px solid #1c2128; }
+    .log-entry.sent { color: #3b82f6; }
+    .log-entry.recv { color: #3fb950; }
+    .log-entry.sys  { color: #f59e0b; }
+    .log-entry.err  { color: #f87171; }
+    .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; background: #8b949e; }
+    .status-dot.connected    { background: #3fb950; box-shadow: 0 0 6px #3fb950; }
+    .status-dot.connecting   { background: #f59e0b; animation: pulse 1s infinite; }
+    .status-dot.disconnected { background: #f87171; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .state-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .badge-0 { background: #92400e; color: #fbbf24; }
+    .badge-1 { background: #1a4731; color: #3fb950; }
+    .badge-2 { background: #4c1d95; color: #a78bfa; }
+    .badge-3 { background: #1c1c1c; color: #8b949e; }
+    table { border-collapse: collapse; width: 100%; font-size: 12px; }
+    td, th { padding: 4px 8px; border: 1px solid #30363d; }
+    th { background: #21262d; }
+  </style>
+</head>
+<body>
+<h1>WebSocket Client — интерактивный справочник</h1>
+
+<!-- ─── Подключение ──────────────────── -->
+<div class="box">
+  <h2>Соединение</h2>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <input id="ws-url" value="ws://localhost:8080" style="width:280px">
+    <input id="ws-protocol" placeholder="subprotocol (опц.)" style="width:180px">
+    <button id="btn-connect" onclick="wsConnect()">Connect</button>
+    <button id="btn-disconnect" class="red" onclick="wsDisconnect()" disabled>Disconnect</button>
+  </div>
+  <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span><span class="status-dot" id="status-dot"></span><span id="status-text">Disconnected</span></span>
+    <span>readyState: <span class="state-badge badge-3" id="ready-state">3 CLOSED</span></span>
+    <span style="color:#8b949e;font-size:12px">bufferedAmount: <span id="buffered">0</span> bytes</span>
+  </div>
+  <div style="margin-top:8px;color:#8b949e;font-size:12px">
+    Для локального эхо-сервера: <code>npm install ws && node echo-server.js</code><br>
+    Публичный эхо-сервер (без гарантии): <code>wss://echo.websocket.org</code>
+  </div>
+</div>
+
+<!-- ─── Отправка ─────────────────────── -->
+<div class="box">
+  <h2>Отправка сообщений</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+    <textarea id="msg-input" rows="3" style="flex:1;min-width:200px">{"type":"echo","data":"Hello, WebSocket!"}</textarea>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button id="btn-send" onclick="wsSend()" disabled>Send Text</button>
+      <button id="btn-send-binary" class="blue" onclick="wsSendBinary()" disabled>Send Binary</button>
+      <button class="amber" onclick="wsSendPing()" id="btn-ping" disabled>Ping (custom)</button>
+      <button onclick="wsBroadcast()" id="btn-broadcast" disabled>Broadcast</button>
+      <button onclick="wsStats()" id="btn-stats" disabled>Server Stats</button>
+    </div>
+  </div>
+  <div>
+    <strong style="font-size:12px;color:#8b949e">Пресеты:</strong>
+    <button onclick="setPreset('ping')" style="font-size:11px;padding:3px 8px">ping</button>
+    <button onclick="setPreset('stats')" style="font-size:11px;padding:3px 8px">stats</button>
+    <button onclick="setPreset('broadcast')" style="font-size:11px;padding:3px 8px">broadcast</button>
+    <button onclick="setPreset('echo')" style="font-size:11px;padding:3px 8px">echo obj</button>
+  </div>
+</div>
+
+<!-- ─── Лог ─────────────────────────── -->
+<div class="box">
+  <h2>Лог событий <button onclick="clearLog()" style="float:right;font-size:11px;padding:2px 8px;background:#21262d;color:#8b949e">Очистить</button></h2>
+  <div class="log" id="log"></div>
+</div>
+
+<!-- ─── WebSocket состояния ────────────── -->
+<div class="box">
+  <h2>readyState — таблица состояний</h2>
+  <table>
+    <thead><tr><th>Код</th><th>Константа</th><th>Описание</th><th>Можно send()?</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>CONNECTING</td><td>Handshake в процессе</td><td>❌</td></tr>
+      <tr><td>1</td><td>OPEN</td><td>Соединение установлено</td><td>✅</td></tr>
+      <tr><td>2</td><td>CLOSING</td><td>Close frame отправлен</td><td>❌</td></tr>
+      <tr><td>3</td><td>CLOSED</td><td>Соединение закрыто</td><td>❌</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ─── Close коды ─────────────────── -->
+<div class="box">
+  <h2>Close коды (RFC 6455 + приложение-специфичные)</h2>
+  <table>
+    <thead><tr><th>Код</th><th>Имя</th><th>Описание</th></tr></thead>
+    <tbody>
+      <tr><td>1000</td><td>Normal Closure</td><td>Нормальное завершение</td></tr>
+      <tr><td>1001</td><td>Going Away</td><td>Сервер перезапускается / вкладка закрывается</td></tr>
+      <tr><td>1002</td><td>Protocol Error</td><td>Ошибка протокола</td></tr>
+      <tr><td>1003</td><td>Unsupported Data</td><td>Неподдерживаемый тип данных</td></tr>
+      <tr><td>1005</td><td>No Status Rcvd</td><td>Нет кода (только для API, не в сети)</td></tr>
+      <tr><td>1006</td><td>Abnormal Closure</td><td>Нет Close frame (разрыв сети, terminate)</td></tr>
+      <tr><td>1007</td><td>Invalid Payload</td><td>Невалидный UTF-8 в text frame</td></tr>
+      <tr><td>1008</td><td>Policy Violation</td><td>Нарушение политики</td></tr>
+      <tr><td>1009</td><td>Message Too Big</td><td>Сообщение слишком большое</td></tr>
+      <tr><td>1011</td><td>Internal Error</td><td>Неожиданная ошибка сервера</td></tr>
+      <tr><td>4000-4999</td><td>App-specific</td><td>Для приложений (4001=Unauthorized, 4004=Not Found...)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+let ws = null;
+let msgCount = 0;
+let bufferedInterval = null;
+
+function log(text, type = "sys") {
+  const log = document.getElementById("log");
+  const ts = new Date().toISOString().slice(11, 23);
+  const entry = document.createElement("div");
+  entry.className = `log-entry ${type}`;
+  const prefix = { sent: "→", recv: "←", sys: "·", err: "✗" }[type];
+  entry.textContent = `[${ts}] ${prefix} ${text}`;
+  log.prepend(entry);
+  if (log.children.length > 200) log.lastElementChild.remove();
+}
+
+function clearLog() {
+  document.getElementById("log").innerHTML = "";
+}
+
+function updateStatus() {
+  if (!ws) return;
+  const states = ["CONNECTING", "OPEN", "CLOSING", "CLOSED"];
+  const dotClasses = ["connecting", "connected", "connecting", "disconnected"];
+  const badgeClasses = ["badge-0", "badge-1", "badge-2", "badge-3"];
+  const rs = ws.readyState;
+
+  document.getElementById("status-dot").className = `status-dot ${dotClasses[rs]}`;
+  document.getElementById("status-text").textContent = states[rs];
+  document.getElementById("ready-state").className = `state-badge ${badgeClasses[rs]}`;
+  document.getElementById("ready-state").textContent = `${rs} ${states[rs]}`;
+
+  const isOpen = rs === WebSocket.OPEN;
+  ["btn-send", "btn-send-binary", "btn-ping", "btn-broadcast", "btn-stats"].forEach(id => {
+    document.getElementById(id).disabled = !isOpen;
+  });
+  document.getElementById("btn-connect").disabled = rs === WebSocket.OPEN || rs === WebSocket.CONNECTING;
+  document.getElementById("btn-disconnect").disabled = rs === WebSocket.CLOSED || rs === WebSocket.CLOSING;
+}
+
+function wsConnect() {
+  const url = document.getElementById("ws-url").value.trim();
+  const protocol = document.getElementById("ws-protocol").value.trim();
+
+  try {
+    ws = protocol ? new WebSocket(url, protocol) : new WebSocket(url);
+  } catch (e) {
+    log(`Ошибка создания WebSocket: ${e.message}`, "err");
+    return;
+  }
+
+  log(`Connecting to ${url}${protocol ? ` (protocol: ${protocol})` : ""}...`);
+  updateStatus();
+
+  bufferedInterval = setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      document.getElementById("buffered").textContent = ws.bufferedAmount;
+    }
+  }, 500);
+
+  ws.onopen = () => {
+    log(`Connected! protocol="${ws.protocol}" extensions="${ws.extensions}"`, "sys");
+    updateStatus();
+  };
+
+  ws.onmessage = (e) => {
+    msgCount++;
+    if (e.data instanceof ArrayBuffer) {
+      log(`Binary [${e.data.byteLength} bytes]: ${new Uint8Array(e.data).slice(0, 16).join(",")}...`, "recv");
+    } else {
+      let display = e.data;
+      try {
+        const parsed = JSON.parse(e.data);
+        display = JSON.stringify(parsed, null, 0).slice(0, 200);
+      } catch {}
+      log(`${display}`, "recv");
+    }
+  };
+
+  ws.onerror = () => {
+    log("WebSocket error (см. DevTools Network > WS для деталей)", "err");
+    updateStatus();
+  };
+
+  ws.onclose = (e) => {
+    clearInterval(bufferedInterval);
+    log(`Closed — code: ${e.code}, reason: "${e.reason || "(none)"}", wasClean: ${e.wasClean}`, "sys");
+    updateStatus();
+  };
+
+  ws.binaryType = "arraybuffer";
+}
+
+function wsDisconnect() {
+  if (ws) {
+    ws.close(1000, "User closed");
+    updateStatus();
+  }
+}
+
+function wsSend() {
+  const msg = document.getElementById("msg-input").value;
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(msg);
+  log(msg.slice(0, 150), "sent");
+}
+
+function wsSendBinary() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  const data = new Uint8Array([0xDE, 0xAD, 0xBE, 0xEF, 1, 2, 3, 4, 5, 6, 7, 8]);
+  ws.send(data);
+  log(`Binary [${data.length} bytes]: ${Array.from(data).map(b => b.toString(16).padStart(2,"0")).join(" ")}`, "sent");
+}
+
+function wsSendPing() {
+  const msg = JSON.stringify({ type: "ping", ts: Date.now() });
+  ws.send(msg);
+  log(msg, "sent");
+}
+
+function wsBroadcast() {
+  const msg = JSON.stringify({ type: "broadcast", data: "Hello, everyone! " + new Date().toISOString() });
+  ws.send(msg);
+  log(msg, "sent");
+}
+
+function wsStats() {
+  const msg = JSON.stringify({ type: "stats" });
+  ws.send(msg);
+  log(msg, "sent");
+}
+
+function setPreset(type) {
+  const presets = {
+    ping: JSON.stringify({ type: "ping", ts: Date.now() }),
+    stats: JSON.stringify({ type: "stats" }),
+    broadcast: JSON.stringify({ type: "broadcast", data: "Hello from client!" }),
+    echo: JSON.stringify({ type: "echo", data: { user: "Alice", message: "test", nested: { a: 1 } } }),
+  };
+  document.getElementById("msg-input").value = presets[type] || "";
+}
+</script>
+</body>
+</html>

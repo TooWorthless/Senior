@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC DataChannel Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: monospace; padding: 20px; background: #0d1117; color: #c9d1d9; max-width: 920px; }
+    .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
+    button { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 3px; font-family: monospace; font-size: 13px; }
+    button:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
+    button.red   { background: #b91c1c; }
+    button.blue  { background: #1d4ed8; }
+    button.amber { background: #92400e; }
+    input, textarea { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 6px 10px; border-radius: 4px; font-family: monospace; }
+    h2 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 0; }
+    .log { background: #010409; padding: 10px; border-radius: 6px; max-height: 200px; overflow-y: auto; font-size: 12px; }
+    .log div { padding: 2px 0; border-bottom: 1px solid #0d1117; }
+    .p1 { color: #3b82f6; } .p2 { color: #22c55e; } .sys { color: #f59e0b; } .err { color: #f87171; }
+    .peer { background: #0d1117; border: 2px solid #30363d; border-radius: 6px; padding: 12px; }
+    .peer.connected { border-color: #3fb950; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .state { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+    .meter { height: 6px; background: #21262d; border-radius: 4px; margin-top: 4px; }
+    .meter-fill { height: 100%; background: #3b82f6; border-radius: 4px; transition: width 0.3s; }
+    video { width: 100%; border-radius: 6px; background: #000; }
+    .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  </style>
+</head>
+<body>
+<h1>WebRTC DataChannel + Media — Local Loopback</h1>
+<p style="color:#8b949e;font-size:13px">Два RTCPeerConnection в одной странице — демонстрация без реального сервера. Signaling происходит через JavaScript.</p>
+
+<!-- ─── P2P DataChannel ───────────────── -->
+<div class="box">
+  <h2>RTCDataChannel — P2P обмен сообщениями</h2>
+  <div class="grid2">
+    <div class="peer" id="peer1-box">
+      <strong style="color:#3b82f6">Peer 1</strong>
+      <span class="state" id="p1-state" style="background:#21262d;color:#8b949e;margin-left:8px">new</span>
+      <div style="margin-top:8px;display:flex;gap:6px">
+        <input id="p1-msg" placeholder="Сообщение" style="flex:1" value="Hello from Peer 1!">
+        <button id="p1-send" onclick="p1Send()" disabled>Отправить →</button>
+      </div>
+    </div>
+    <div class="peer" id="peer2-box">
+      <strong style="color:#22c55e">Peer 2</strong>
+      <span class="state" id="p2-state" style="background:#21262d;color:#8b949e;margin-left:8px">new</span>
+      <div style="margin-top:8px;display:flex;gap:6px">
+        <input id="p2-msg" placeholder="Сообщение" style="flex:1" value="Reply from Peer 2!">
+        <button id="p2-send" onclick="p2Send()" disabled>Отправить →</button>
+      </div>
+    </div>
+  </div>
+  <br>
+  <button onclick="setupLoopback()">1. Установить P2P соединение</button>
+  <button class="red" onclick="closeLoopback()">Закрыть</button>
+  <button class="blue" onclick="sendBinary()">Отправить Binary</button>
+  <button class="amber" onclick="benchmarkDC()">Benchmark (1000 msg)</button>
+  <div class="log" id="dc-log" style="margin-top:8px"></div>
+</div>
+
+<!-- ─── Ordered vs Unordered ─────────── -->
+<div class="box">
+  <h2>Ordered vs Unordered — latency сравнение</h2>
+  <p style="color:#8b949e;font-size:12px;margin-top:0">Симулируем потерю пакетов чтобы увидеть разницу в поведении.</p>
+  <button onclick="compareChannels()">Запустить сравнение</button>
+  <div id="compare-result" style="margin-top:8px;font-size:12px;color:#8b949e">
+    Нажми кнопку — покажем разницу ordered vs unordered в теории.
+  </div>
+</div>
+
+<!-- ─── MediaStream / getUserMedia ───── -->
+<div class="box">
+  <h2>MediaStream — Camera & Microphone</h2>
+  <div class="video-grid">
+    <div>
+      <div style="color:#8b949e;font-size:11px;margin-bottom:4px">Local (Camera)</div>
+      <video id="local-video" autoplay muted playsinline></video>
+    </div>
+    <div>
+      <div style="color:#8b949e;font-size:11px;margin-bottom:4px">Remote (Loopback via WebRTC)</div>
+      <video id="remote-video" autoplay playsinline></video>
+    </div>
+  </div>
+  <br>
+  <button onclick="startCamera()">📷 Запустить камеру</button>
+  <button onclick="startVideoLoopback()">🔄 WebRTC Video Loopback</button>
+  <button class="red" onclick="stopMedia()">■ Стоп</button>
+  <button onclick="toggleMuteVideo()">🎥 Toggle Video</button>
+  <button onclick="toggleMuteAudio()">🎤 Toggle Audio</button>
+  <div id="media-info" style="margin-top:8px;font-size:12px;color:#8b949e"></div>
+  <div class="log" id="media-log" style="margin-top:8px"></div>
+</div>
+
+<!-- ─── DataChannel Stats ─────────────── -->
+<div class="box">
+  <h2>getStats() — RTCPeerConnection статистика</h2>
+  <button onclick="getStats()" id="btn-stats" disabled>Получить статистику</button>
+  <div id="stats-display" style="background:#010409;padding:10px;border-radius:6px;font-size:12px;margin-top:8px;min-height:40px"></div>
+</div>
+
+<script>
+// ─── DataChannel Loopback ────────────────────────
+let pc1, pc2, dc1, dc2;
+let dcLogEl;
+
+function dcLog(text, cls = "sys") {
+  if (!dcLogEl) dcLogEl = document.getElementById("dc-log");
+  const ts = new Date().toISOString().slice(11,23);
+  const d = document.createElement("div");
+  d.className = cls;
+  d.textContent = `[${ts}] ${text}`;
+  dcLogEl.prepend(d);
+  if (dcLogEl.children.length > 150) dcLogEl.lastElementChild.remove();
+}
+
+function setState(id, text, color) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.style.background = color + "22";
+  el.style.color = color;
+}
+
+async function setupLoopback() {
+  closeLoopback();
+  const iceConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+  pc1 = new RTCPeerConnection(iceConfig);
+  pc2 = new RTCPeerConnection(iceConfig);
+
+  // Прямой "signaling" через JS
+  pc1.onicecandidate = ({ candidate }) => { if (candidate) pc2.addIceCandidate(candidate); };
+  pc2.onicecandidate = ({ candidate }) => { if (candidate) pc1.addIceCandidate(candidate); };
+
+  pc1.onconnectionstatechange = () => {
+    setState("p1-state", pc1.connectionState, pc1.connectionState === "connected" ? "#3fb950" : "#f59e0b");
+    if (pc1.connectionState === "connected") {
+      document.getElementById("peer1-box").classList.add("connected");
+      document.getElementById("btn-stats").disabled = false;
+    }
+  };
+  pc2.onconnectionstatechange = () => {
+    setState("p2-state", pc2.connectionState, pc2.connectionState === "connected" ? "#3fb950" : "#f59e0b");
+    if (pc2.connectionState === "connected") document.getElementById("peer2-box").classList.add("connected");
+  };
+
+  // DataChannel от Peer 1
+  dc1 = pc1.createDataChannel("chat", { ordered: true });
+  dc1.onopen = () => {
+    dcLog("✅ DataChannel открыт (Peer 1 side)", "sys");
+    document.getElementById("p1-send").disabled = false;
+  };
+  dc1.onmessage = (e) => dcLog(`← P2→P1: ${e.data instanceof ArrayBuffer ? `[binary ${e.data.byteLength}B]` : e.data}`, "p2");
+
+  // Принять DataChannel на Peer 2
+  pc2.ondatachannel = ({ channel }) => {
+    dc2 = channel;
+    dc2.onopen = () => {
+      dcLog("✅ DataChannel принят (Peer 2 side)", "sys");
+      document.getElementById("p2-send").disabled = false;
+    };
+    dc2.onmessage = (e) => dcLog(`← P1→P2: ${e.data instanceof ArrayBuffer ? `[binary ${e.data.byteLength}B]` : e.data}`, "p1");
+  };
+
+  // Offer/Answer
+  setState("p1-state", "connecting", "#f59e0b");
+  setState("p2-state", "connecting", "#f59e0b");
+
+  const offer = await pc1.createOffer();
+  await pc1.setLocalDescription(offer);
+  await pc2.setRemoteDescription(offer);
+  const answer = await pc2.createAnswer();
+  await pc2.setLocalDescription(answer);
+  await pc1.setRemoteDescription(answer);
+
+  dcLog("📝 Offer/Answer обменялись, ICE checking...", "sys");
+}
+
+function closeLoopback() {
+  pc1?.close(); pc2?.close();
+  pc1 = pc2 = dc1 = dc2 = null;
+  setState("p1-state", "closed", "#8b949e");
+  setState("p2-state", "closed", "#8b949e");
+  document.getElementById("p1-send").disabled = true;
+  document.getElementById("p2-send").disabled = true;
+  document.getElementById("btn-stats").disabled = true;
+  document.getElementById("peer1-box").classList.remove("connected");
+  document.getElementById("peer2-box").classList.remove("connected");
+}
+
+function p1Send() {
+  const text = document.getElementById("p1-msg").value;
+  if (dc1?.readyState === "open") { dc1.send(text); dcLog(`→ P1 sent: ${text}`, "p1"); }
+  else dcLog("dc1 не открыт", "err");
+}
+
+function p2Send() {
+  const text = document.getElementById("p2-msg").value;
+  if (dc2?.readyState === "open") { dc2.send(text); dcLog(`→ P2 sent: ${text}`, "p2"); }
+  else dcLog("dc2 не открыт", "err");
+}
+
+function sendBinary() {
+  if (!dc1 || dc1.readyState !== "open") { dcLog("Сначала установи соединение", "err"); return; }
+  const buffer = new ArrayBuffer(32);
+  const view = new DataView(buffer);
+  for (let i = 0; i < 32; i++) view.setUint8(i, i);
+  dc1.send(buffer);
+  dcLog(`→ P1 sent Binary: ${new Uint8Array(buffer).slice(0,8).join(",")}... (32 bytes)`, "p1");
+}
+
+async function benchmarkDC() {
+  if (!dc1 || dc1.readyState !== "open") { dcLog("Сначала установи соединение", "err"); return; }
+  const N = 1000;
+  const msg = JSON.stringify({ type: "bench", data: "x".repeat(100) });
+  let received = 0;
+  const t = performance.now();
+
+  // Считаем сколько получит dc2
+  const origOnMsg = dc2?.onmessage;
+  if (dc2) {
+    dc2.onmessage = (e) => {
+      received++;
+      if (received >= N) {
+        const ms = performance.now() - t;
+        dcLog(`Benchmark: ${N} сообщений × ${msg.length}B = ${(N * msg.length / 1024).toFixed(0)}KB`, "sys");
+        dcLog(`Время: ${ms.toFixed(0)}ms | Скорость: ${(N / ms * 1000).toFixed(0)} msg/s`, "sys");
+        dcLog(`Throughput: ${((N * msg.length / 1024 / 1024) / (ms / 1000)).toFixed(2)} MB/s`, "sys");
+        dc2.onmessage = origOnMsg;
+      }
+    };
+  }
+
+  for (let i = 0; i < N; i++) dc1.send(msg);
+  dcLog(`Отправлено ${N} сообщений...`, "p1");
+}
+
+// ─── Ordered vs Unordered ────────────────────────
+function compareChannels() {
+  const el = document.getElementById("compare-result");
+  el.innerHTML = `
+<div style="color:#f0f6fc;margin-bottom:8px"><strong>Ordered (SCTP с надёжной доставкой):</strong></div>
+<pre style="background:#010409;padding:8px;border-radius:4px;font-size:11px;color:#3b82f6">
+Отправка: msg1, msg2, msg3
+Потеря:   msg2 → SCTP ждёт и повторяет
+Получение: msg1 ... (пауза) ... msg2(retry), msg3
+Head-of-line blocking: msg3 ждёт msg2
+
+✅ Порядок гарантирован
+✅ Доставка гарантирована
+❌ Latency спайк при потере пакета</pre>
+
+<div style="color:#f0f6fc;margin:8px 0"><strong>Unordered (ordered: false, maxRetransmits: 0):</strong></div>
+<pre style="background:#010409;padding:8px;border-radius:4px;font-size:11px;color:#22c55e">
+Отправка: msg1, msg2, msg3
+Потеря:   msg2 → отброшен, НЕ повторяется
+Получение: msg1, msg3 (порядок может быть другим)
+
+✅ Минимальный latency
+✅ Нет head-of-line blocking
+❌ Потерянные пакеты не восстановить
+
+Use case: позиции игроков, курсор, live preview</pre>
+
+<div style="color:#f0f6fc;margin:8px 0"><strong>Partial Reliability (maxPacketLifeTime: 16ms):</strong></div>
+<pre style="background:#010409;padding:8px;border-radius:4px;font-size:11px;color:#f59e0b">
+Пытаемся доставить в течение 16ms
+Если не успели → отбрасываем
+
+Идеально для: 60fps game updates (1 frame = 16ms)
+Свежесть данных важнее гарантии доставки</pre>
+  `;
+}
+
+// ─── MediaStream ─────────────────────────────────
+let localStream = null;
+let mediaPc1, mediaPc2;
+
+function mediaLog(text, cls = "sys") {
+  const el = document.getElementById("media-log");
+  const d = document.createElement("div");
+  d.className = cls;
+  d.textContent = `[${new Date().toISOString().slice(11,23)}] ${text}`;
+  el.prepend(d);
+}
+
+async function startCamera() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    document.getElementById("local-video").srcObject = localStream;
+
+    const track = localStream.getVideoTracks()[0];
+    const settings = track.getSettings();
+    document.getElementById("media-info").textContent =
+      `Camera: ${settings.width}×${settings.height} @ ${settings.frameRate?.toFixed(0)}fps | deviceId: ${settings.deviceId?.slice(0,16)}...`;
+    mediaLog("Camera started", "sys");
+  } catch(e) {
+    mediaLog(`Camera error: ${e.message}`, "err");
+  }
+}
+
+async function startVideoLoopback() {
+  if (!localStream) { mediaLog("Сначала запусти камеру", "err"); return; }
+
+  mediaPc1?.close(); mediaPc2?.close();
+  const cfg = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+  mediaPc1 = new RTCPeerConnection(cfg);
+  mediaPc2 = new RTCPeerConnection(cfg);
+
+  mediaPc1.onicecandidate = ({ candidate }) => { if (candidate) mediaPc2.addIceCandidate(candidate); };
+  mediaPc2.onicecandidate = ({ candidate }) => { if (candidate) mediaPc1.addIceCandidate(candidate); };
+
+  // Добавить треки
+  localStream.getTracks().forEach(t => mediaPc1.addTrack(t, localStream));
+
+  // Получить треки
+  mediaPc2.ontrack = (e) => {
+    document.getElementById("remote-video").srcObject = e.streams[0];
+    mediaLog(`Получен remote track: ${e.track.kind}`, "sys");
+  };
+
+  mediaPc1.onconnectionstatechange = () => mediaLog(`pc1 state: ${mediaPc1.connectionState}`, "p1");
+  mediaPc2.onconnectionstatechange = () => mediaLog(`pc2 state: ${mediaPc2.connectionState}`, "p2");
+
+  const offer = await mediaPc1.createOffer();
+  await mediaPc1.setLocalDescription(offer);
+  await mediaPc2.setRemoteDescription(offer);
+  const answer = await mediaPc2.createAnswer();
+  await mediaPc2.setLocalDescription(answer);
+  await mediaPc1.setRemoteDescription(answer);
+
+  mediaLog("Video loopback установлен", "sys");
+}
+
+function stopMedia() {
+  localStream?.getTracks().forEach(t => t.stop());
+  localStream = null;
+  mediaPc1?.close(); mediaPc2?.close();
+  document.getElementById("local-video").srcObject = null;
+  document.getElementById("remote-video").srcObject = null;
+  document.getElementById("media-info").textContent = "";
+  mediaLog("Media stopped", "sys");
+}
+
+function toggleMuteVideo() {
+  if (!localStream) return;
+  const track = localStream.getVideoTracks()[0];
+  if (track) {
+    track.enabled = !track.enabled;
+    mediaLog(`Video ${track.enabled ? "enabled" : "muted (track.enabled=false, трек идёт но чёрный)"}`, "sys");
+  }
+}
+
+function toggleMuteAudio() {
+  if (!localStream) return;
+  const track = localStream.getAudioTracks()[0];
+  if (track) {
+    track.enabled = !track.enabled;
+    mediaLog(`Audio ${track.enabled ? "enabled" : "muted"}`, "sys");
+  }
+}
+
+// ─── Stats ──────────────────────────────────────
+async function getStats() {
+  if (!pc1) return;
+  const stats = await pc1.getStats();
+  const lines = [];
+  stats.forEach(report => {
+    if (report.type === "data-channel") {
+      lines.push(`[DataChannel "${report.label}"]`);
+      lines.push(`  state: ${report.state}`);
+      lines.push(`  bytesSent: ${report.bytesSent} | bytesReceived: ${report.bytesReceived}`);
+      lines.push(`  messagesSent: ${report.messagesSent} | messagesReceived: ${report.messagesReceived}`);
+    }
+    if (report.type === "candidate-pair" && report.state === "succeeded") {
+      lines.push(`[ICE CandidatePair - succeeded]`);
+      lines.push(`  RTT: ${((report.currentRoundTripTime || 0) * 1000).toFixed(1)}ms`);
+      lines.push(`  bytesSent: ${report.bytesSent} | bytesReceived: ${report.bytesReceived}`);
+      lines.push(`  availableOutgoingBitrate: ${(report.availableOutgoingBitrate / 1000).toFixed(0)} Kbps`);
+    }
+    if (report.type === "local-candidate" && report.candidateType) {
+      lines.push(`[Local Candidate: ${report.candidateType}] ${report.address}:${report.port} (${report.protocol})`);
+    }
+  });
+  document.getElementById("stats-display").textContent = lines.join("\n") || "Нет данных (соединение ещё устанавливается)";
+}
+</script>
+</body>
+</html>

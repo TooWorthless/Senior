@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC Concepts</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: monospace; padding: 20px; background: #0d1117; color: #c9d1d9; max-width: 900px; }
+    .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
+    button { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 3px; font-family: monospace; font-size: 13px; }
+    button.red  { background: #b91c1c; }
+    button.blue { background: #1d4ed8; }
+    h2 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 0; }
+    .log { background: #010409; padding: 10px; border-radius: 6px; max-height: 220px; overflow-y: auto; font-size: 12px; white-space: pre-wrap; }
+    .log div { padding: 2px 0; border-bottom: 1px solid #0d1117; }
+    .step { color: #f59e0b; } .ok { color: #3fb950; } .err { color: #f87171; } .info { color: #8b949e; } .ice { color: #a78bfa; }
+    canvas { display: block; background: #010409; border-radius: 6px; }
+    pre { background: #010409; padding: 12px; border-radius: 6px; font-size: 11px; overflow-x: auto; max-height: 300px; overflow-y: auto; color: #a5d6ff; }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin: 2px; }
+    .b-new { background: #1c1c1c; color: #8b949e; }
+    .b-checking { background: #92400e; color: #fbbf24; }
+    .b-connected { background: #1a4731; color: #3fb950; }
+    .b-failed { background: #3d0f0f; color: #f87171; }
+  </style>
+</head>
+<body>
+<h1>WebRTC — архитектура и концепции</h1>
+
+<!-- ─── Диаграмма потока ─────────────── -->
+<div class="box">
+  <h2>WebRTC Connection Flow — визуализация</h2>
+  <canvas id="flow-canvas" width="840" height="300"></canvas>
+  <br>
+  <button onclick="animateFlow()">▶ Анимировать</button>
+  <button class="red" onclick="resetFlow()">Сброс</button>
+</div>
+
+<!-- ─── SDP парсер ───────────────────── -->
+<div class="box">
+  <h2>SDP — разбор структуры</h2>
+  <button onclick="generateSDP('offer')">Сгенерировать Offer SDP</button>
+  <button onclick="generateSDP('answer')">Сгенерировать Answer SDP</button>
+  <button onclick="parseSDP()">Разобрать SDP</button>
+  <pre id="sdp-display">Нажми "Сгенерировать Offer SDP"...</pre>
+  <div id="sdp-parsed" style="margin-top:8px;font-size:12px;color:#8b949e"></div>
+</div>
+
+<!-- ─── ICE Gathering ────────────────── -->
+<div class="box">
+  <h2>ICE Candidate Gathering — реальные кандидаты браузера</h2>
+  <p style="color:#8b949e;font-size:12px;margin-top:0">Создаём RTCPeerConnection и смотрим какие ICE кандидаты собирает браузер.</p>
+  <button onclick="gatherICE()">Gather ICE Candidates</button>
+  <button class="red" onclick="stopICE()">Стоп</button>
+  <div class="log" id="ice-log"></div>
+</div>
+
+<!-- ─── Состояния соединения ─────────── -->
+<div class="box">
+  <h2>RTCPeerConnection States</h2>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">
+    <div>
+      <div style="color:#8b949e;font-size:11px">iceConnectionState</div>
+      <span class="badge b-new" id="ice-state">new</span>
+    </div>
+    <div>
+      <div style="color:#8b949e;font-size:11px">connectionState</div>
+      <span class="badge b-new" id="conn-state">new</span>
+    </div>
+    <div>
+      <div style="color:#8b949e;font-size:11px">signalingState</div>
+      <span class="badge b-new" id="sig-state">stable</span>
+    </div>
+  </div>
+
+  <table style="border-collapse:collapse;width:100%;font-size:12px">
+    <thead><tr style="background:#21262d"><th style="padding:4px 8px;border:1px solid #30363d">State</th><th style="padding:4px 8px;border:1px solid #30363d">ICE Connection</th><th style="padding:4px 8px;border:1px solid #30363d">Connection</th><th style="padding:4px 8px;border:1px solid #30363d">Signaling</th></tr></thead>
+    <tbody id="states-table"></tbody>
+  </table>
+</div>
+
+<!-- ─── NAT Types ────────────────────── -->
+<div class="box">
+  <h2>NAT Types — визуализация</h2>
+  <button onclick="showNAT('full-cone')">Full Cone</button>
+  <button onclick="showNAT('symmetric')">Symmetric</button>
+  <button onclick="showNAT('hole-punching')">UDP Hole Punching</button>
+  <canvas id="nat-canvas" width="840" height="220"></canvas>
+  <div id="nat-desc" style="color:#8b949e;font-size:12px;margin-top:8px"></div>
+</div>
+
+<!-- ─── ICE Config builder ──────────── -->
+<div class="box">
+  <h2>RTCPeerConnection Configuration</h2>
+  <button onclick="buildConfig('minimal')">Minimal (только STUN)</button>
+  <button onclick="buildConfig('production')">Production (STUN + TURN)</button>
+  <button onclick="buildConfig('relay-only')">Relay only (только TURN)</button>
+  <pre id="config-display">Выбери конфигурацию</pre>
+</div>
+
+<script>
+// ─── Flow Animation ─────────────────────────────
+const flowCanvas = document.getElementById("flow-canvas");
+const fCtx = flowCanvas.getContext("2d");
+let flowStep = 0;
+let flowTimer = null;
+
+const FLOW_STEPS = [
+  { label: "1. Peer A создаёт Offer SDP", y: 30, from: "A", arrow: "signal" },
+  { label: "2. Offer передаётся через Signaling Server", y: 70, from: "A", arrow: "to-signal" },
+  { label: "3. Signaling передаёт Offer → Peer B", y: 110, from: "signal", arrow: "to-B" },
+  { label: "4. Peer B создаёт Answer SDP", y: 150, from: "B", arrow: "none" },
+  { label: "5. Answer передаётся через Signaling", y: 190, from: "B", arrow: "to-signal-rev" },
+  { label: "6. Signaling передаёт Answer → Peer A", y: 230, from: "signal", arrow: "to-A" },
+  { label: "7. ICE Candidates обмениваются (trickle)", y: 270, from: "both", arrow: "ice" },
+  { label: "8. Прямое P2P соединение установлено!", y: 295, from: "both", arrow: "p2p" },
+];
+
+function drawFlowBase() {
+  fCtx.clearRect(0, 0, 840, 300);
+  fCtx.fillStyle = "#0d1117";
+  fCtx.fillRect(0, 0, 840, 300);
+
+  // Колонки
+  const cols = [
+    { x: 100, label: "Peer A", color: "#3b82f6" },
+    { x: 420, label: "Signaling", color: "#f59e0b" },
+    { x: 740, label: "Peer B", color: "#22c55e" },
+  ];
+
+  for (const col of cols) {
+    fCtx.fillStyle = col.color;
+    fCtx.font = "bold 14px monospace";
+    fCtx.textAlign = "center";
+    fCtx.fillText(col.label, col.x, 20);
+
+    fCtx.strokeStyle = col.color + "44";
+    fCtx.lineWidth = 1;
+    fCtx.setLineDash([4, 4]);
+    fCtx.beginPath();
+    fCtx.moveTo(col.x, 25);
+    fCtx.lineTo(col.x, 295);
+    fCtx.stroke();
+    fCtx.setLineDash([]);
+  }
+}
+
+function drawFlowStep(step) {
+  const s = FLOW_STEPS[step];
+  if (!s) return;
+
+  const positions = { A: 100, signal: 420, B: 740 };
+
+  // Label
+  fCtx.fillStyle = "#f0f6fc";
+  fCtx.font = "12px monospace";
+  fCtx.textAlign = "left";
+  fCtx.fillText(s.label, 10, s.y - 5);
+
+  // Arrow
+  const arrowY = s.y + 5;
+  if (s.arrow === "to-signal") drawArrow(fCtx, 100, arrowY, 420, arrowY, "#3b82f6");
+  if (s.arrow === "to-B")      drawArrow(fCtx, 420, arrowY, 740, arrowY, "#f59e0b");
+  if (s.arrow === "to-signal-rev") drawArrow(fCtx, 740, arrowY, 420, arrowY, "#22c55e");
+  if (s.arrow === "to-A")      drawArrow(fCtx, 420, arrowY, 100, arrowY, "#f59e0b");
+  if (s.arrow === "ice") {
+    drawArrow(fCtx, 100, arrowY, 740, arrowY - 8, "#a78bfa");
+    drawArrow(fCtx, 740, arrowY + 4, 100, arrowY + 12, "#a78bfa");
+  }
+  if (s.arrow === "p2p") {
+    fCtx.strokeStyle = "#3fb950";
+    fCtx.lineWidth = 3;
+    fCtx.beginPath();
+    fCtx.moveTo(100, arrowY);
+    fCtx.lineTo(740, arrowY);
+    fCtx.stroke();
+    fCtx.fillStyle = "#3fb950";
+    fCtx.font = "bold 12px monospace";
+    fCtx.textAlign = "center";
+    fCtx.fillText("══ P2P Connected (UDP/DTLS) ══", 420, arrowY - 5);
+  }
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color) {
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  // Arrowhead
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - 10 * Math.cos(angle - 0.4), y2 - 10 * Math.sin(angle - 0.4));
+  ctx.lineTo(x2 - 10 * Math.cos(angle + 0.4), y2 - 10 * Math.sin(angle + 0.4));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function animateFlow() {
+  if (flowTimer) clearInterval(flowTimer);
+  flowStep = 0;
+  drawFlowBase();
+  flowTimer = setInterval(() => {
+    drawFlowStep(flowStep);
+    flowStep++;
+    if (flowStep >= FLOW_STEPS.length) clearInterval(flowTimer);
+  }, 700);
+}
+
+function resetFlow() {
+  clearInterval(flowTimer);
+  flowStep = 0;
+  drawFlowBase();
+}
+
+drawFlowBase();
+
+// ─── SDP ──────────────────────────────────────
+let currentSDP = "";
+
+async function generateSDP(type) {
+  const pc = new RTCPeerConnection({
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+  });
+
+  try {
+    if (type === "offer") {
+      // Нужен хотя бы один трек или datachannel для SDP
+      pc.createDataChannel("test");
+      const offer = await pc.createOffer();
+      currentSDP = offer.sdp;
+      document.getElementById("sdp-display").textContent = offer.sdp;
+    } else {
+      pc.createDataChannel("test");
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      const pc2 = new RTCPeerConnection();
+      pc2.createDataChannel("test");
+      await pc2.setRemoteDescription(offer);
+      const answer = await pc2.createAnswer();
+      currentSDP = answer.sdp;
+      document.getElementById("sdp-display").textContent = answer.sdp;
+      pc2.close();
+    }
+  } catch(e) {
+    document.getElementById("sdp-display").textContent = `Ошибка: ${e.message}`;
+  }
+  pc.close();
+}
+
+function parseSDP() {
+  if (!currentSDP) { document.getElementById("sdp-parsed").textContent = "Сначала сгенерируй SDP"; return; }
+  const lines = currentSDP.split("\n");
+  const parsed = {
+    version: lines.find(l => l.startsWith("v="))?.slice(2).trim(),
+    sessionName: lines.find(l => l.startsWith("s="))?.slice(2).trim(),
+    media: [],
+    iceUfrag: lines.find(l => l.includes("ice-ufrag"))?.split(":")[1]?.trim(),
+    fingerprint: lines.find(l => l.includes("fingerprint"))?.split(" ")[1],
+    codecs: lines.filter(l => l.includes("rtpmap")).map(l => l.split(" ").slice(1).join(" ")),
+    hasDataChannel: currentSDP.includes("application"),
+    direction: lines.find(l => /a=sendrecv|sendonly|recvonly|inactive/.test(l))?.slice(2).trim(),
+  };
+
+  lines.forEach(l => { if (l.startsWith("m=")) parsed.media.push(l.slice(2).split(" ")[0]); });
+
+  document.getElementById("sdp-parsed").innerHTML = `
+    <strong style="color:#f0f6fc">Разбор SDP:</strong><br>
+    • Version: ${parsed.version}<br>
+    • Media types: ${parsed.media.join(", ") || "none"}<br>
+    • Data channel: ${parsed.hasDataChannel ? "✅ есть" : "❌ нет"}<br>
+    • ICE ufrag: ${parsed.iceUfrag || "?"}<br>
+    • DTLS fingerprint: ${parsed.fingerprint || "?"}<br>
+    • Codecs: ${parsed.codecs.join(" | ") || "none"}
+  `;
+}
+
+// ─── ICE Gathering ─────────────────────────────
+let icePC = null;
+
+async function gatherICE() {
+  stopICE();
+  const log = document.getElementById("ice-log");
+
+  function addLog(text, cls = "info") {
+    const d = document.createElement("div");
+    d.className = cls;
+    d.textContent = `[${new Date().toISOString().slice(11,23)}] ${text}`;
+    log.prepend(d);
+  }
+
+  icePC = new RTCPeerConnection({
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+    ],
+  });
+
+  icePC.createDataChannel("gather-test");
+  icePC.onicecandidate = (e) => {
+    if (e.candidate) {
+      const c = e.candidate;
+      const type = c.type || c.candidate.match(/typ (\w+)/)?.[1] || "?";
+      const protocol = c.protocol || c.candidate.match(/ (udp|tcp) /i)?.[1] || "?";
+      addLog(`🔍 ${type.padEnd(8)} ${protocol.padEnd(4)} ${c.address || "?"}:${c.port || "?"}`, "ice");
+      updateStateDisplay(icePC);
+    } else {
+      addLog("✅ ICE gathering complete (null candidate)", "ok");
+      updateStateDisplay(icePC);
+    }
+  };
+
+  icePC.onicegatheringstatechange = () => addLog(`gathering state: ${icePC.iceGatheringState}`, "step");
+  icePC.oniceconnectionstatechange = () => { addLog(`ICE connection: ${icePC.iceConnectionState}`, "step"); updateStateDisplay(icePC); };
+  icePC.onsignalingstatechange = () => { addLog(`Signaling: ${icePC.signalingState}`, "info"); updateStateDisplay(icePC); };
+
+  const offer = await icePC.createOffer();
+  await icePC.setLocalDescription(offer);
+  addLog("Created offer, gathering ICE candidates...", "step");
+}
+
+function stopICE() {
+  icePC?.close();
+  icePC = null;
+}
+
+// ─── States display ─────────────────────────────
+function updateStateDisplay(pc) {
+  const stateToClass = (s) => {
+    if (s === "connected" || s === "completed") return "b-connected";
+    if (s === "checking" || s === "connecting" || s === "have-local-offer" || s === "have-remote-offer") return "b-checking";
+    if (s === "failed" || s === "closed") return "b-failed";
+    return "b-new";
+  };
+
+  const iceEl = document.getElementById("ice-state");
+  iceEl.textContent = pc.iceConnectionState;
+  iceEl.className = "badge " + stateToClass(pc.iceConnectionState);
+
+  const connEl = document.getElementById("conn-state");
+  connEl.textContent = pc.connectionState;
+  connEl.className = "badge " + stateToClass(pc.connectionState);
+
+  const sigEl = document.getElementById("sig-state");
+  sigEl.textContent = pc.signalingState;
+  sigEl.className = "badge " + stateToClass(pc.signalingState);
+}
+
+// ─── States Table ───────────────────────────────
+const statesData = [
+  ["new", "Создан, без активности", "new", "stable"],
+  ["checking", "Проверяет ICE кандидатов", "connecting", "have-local-offer / have-remote-offer"],
+  ["connected", "ICE пара найдена", "connected", "stable"],
+  ["completed", "Все кандидаты проверены", "connected", "stable"],
+  ["failed", "Не удалось найти путь", "failed", "stable"],
+  ["disconnected", "Временный разрыв", "disconnected", "stable"],
+  ["closed", "Закрыто", "closed", "closed"],
+];
+
+const tbody = document.getElementById("states-table");
+statesData.forEach(([ice, desc, conn, sig]) => {
+  const tr = document.createElement("tr");
+  const color = ice === "connected" || ice === "completed" ? "#1a4731" : ice === "failed" ? "#3d0f0f" : ice === "checking" ? "#2a1f00" : "#1c2128";
+  tr.style.background = color;
+  tr.innerHTML = `<td style="padding:4px 8px;border:1px solid #30363d;font-weight:bold">${ice}</td><td style="padding:4px 8px;border:1px solid #30363d;color:#8b949e">${desc}</td><td style="padding:4px 8px;border:1px solid #30363d">${conn}</td><td style="padding:4px 8px;border:1px solid #30363d">${sig}</td>`;
+  tbody.appendChild(tr);
+});
+
+// ─── NAT Visualization ──────────────────────────
+const natCanvas = document.getElementById("nat-canvas");
+const nCtx = natCanvas.getContext("2d");
+
+function showNAT(type) {
+  nCtx.fillStyle = "#0d1117";
+  nCtx.fillRect(0, 0, 840, 220);
+
+  const drawBox = (x, y, w, h, color, label) => {
+    nCtx.fillStyle = color + "22";
+    nCtx.strokeStyle = color;
+    nCtx.lineWidth = 2;
+    nCtx.beginPath();
+    nCtx.roundRect(x, y, w, h, 6);
+    nCtx.fill();
+    nCtx.stroke();
+    nCtx.fillStyle = color;
+    nCtx.font = "bold 12px monospace";
+    nCtx.textAlign = "center";
+    nCtx.fillText(label, x + w/2, y + h/2 + 4);
+  };
+
+  const drawArrowH = (x1, x2, y, color, label = "") => {
+    nCtx.strokeStyle = color;
+    nCtx.fillStyle = color;
+    nCtx.lineWidth = 2;
+    nCtx.beginPath();
+    nCtx.moveTo(x1, y); nCtx.lineTo(x2, y); nCtx.stroke();
+    const dir = x2 > x1 ? 1 : -1;
+    nCtx.beginPath();
+    nCtx.moveTo(x2, y);
+    nCtx.lineTo(x2 - dir*10, y - 5);
+    nCtx.lineTo(x2 - dir*10, y + 5);
+    nCtx.closePath(); nCtx.fill();
+    if (label) {
+      nCtx.font = "10px monospace";
+      nCtx.fillStyle = color;
+      nCtx.textAlign = "center";
+      nCtx.fillText(label, (x1+x2)/2, y - 6);
+    }
+  };
+
+  if (type === "full-cone") {
+    drawBox(20, 80, 140, 50, "#3b82f6", "Peer A\n192.168.1.5");
+    drawBox(200, 60, 100, 90, "#f59e0b", "NAT A\n1.2.3.4:1111\n(Full Cone)");
+    drawBox(360, 80, 120, 50, "#22c55e", "STUN Server");
+    drawBox(560, 60, 140, 50, "#a78bfa", "Peer B\n5.6.7.8");
+    drawBox(560, 125, 140, 50, "#f87171", "Any Host\n9.9.9.9");
+    drawArrowH(160, 200, 105, "#3b82f6", "src: 192.168.1.5:54321");
+    drawArrowH(300, 360, 105, "#f59e0b", "1.2.3.4:1111 → anyone");
+    drawArrowH(480, 560, 85, "#22c55e", "B can reach");
+    drawArrowH(700, 560, 150, "#f87171", "任何人 can reach!");
+
+    document.getElementById("nat-desc").textContent = "Full Cone: один внешний порт для всех. Любой хост может отправить пакет на 1.2.3.4:1111 → пройдёт. Легко пробить через STUN.";
+  }
+
+  if (type === "symmetric") {
+    drawBox(20, 60, 140, 50, "#3b82f6", "Peer A");
+    drawBox(200, 40, 120, 130, "#f59e0b", "Symmetric\nNAT A\nport 1111→A\nport 2222→B");
+    drawBox(400, 60, 120, 50, "#22c55e", "Peer B\n5.6.7.8");
+    drawBox(400, 130, 120, 50, "#a78bfa", "STUN\n→ сказал :1111");
+    nCtx.fillStyle = "#f87171";
+    nCtx.font = "bold 14px monospace";
+    nCtx.textAlign = "center";
+    nCtx.fillText("⚠ STUN видит :1111, но для B открыт :2222!", 420, 205);
+    nCtx.fillText("→ Нужен TURN relay!", 420, 195);
+    drawArrowH(160, 200, 75, "#3b82f6", "→ A");
+    drawArrowH(160, 200, 135, "#3b82f6", "→ B");
+    drawArrowH(320, 400, 85, "#f59e0b", ":1111");
+    drawArrowH(320, 400, 145, "#f59e0b", ":2222 (другой!)");
+
+    document.getElementById("nat-desc").textContent = "Symmetric NAT: каждое соединение получает РАЗНЫЙ внешний порт. STUN даёт неправильный порт. Нужен TURN (relay).";
+  }
+
+  if (type === "hole-punching") {
+    drawBox(20, 90, 120, 50, "#3b82f6", "Peer A\n192.168.1.5");
+    drawBox(180, 70, 110, 90, "#3b82f6", "NAT A\n1.2.3.4:1111");
+    drawBox(350, 80, 140, 70, "#f59e0b", "Signaling\n(обменялись\nадресами)");
+    drawBox(560, 70, 110, 90, "#22c55e", "NAT B\n5.6.7.8:2222");
+    drawBox(700, 90, 120, 50, "#22c55e", "Peer B\n10.0.0.5");
+
+    // Step 1: A пробивает
+    nCtx.strokeStyle = "#3b82f6";
+    nCtx.lineWidth = 2;
+    nCtx.setLineDash([4, 4]);
+    nCtx.beginPath();
+    nCtx.moveTo(290, 105); nCtx.lineTo(560, 120);
+    nCtx.stroke();
+    nCtx.setLineDash([]);
+    nCtx.fillStyle = "#3b82f6";
+    nCtx.font = "10px monospace";
+    nCtx.textAlign = "center";
+    nCtx.fillText("1. A→B: UDP (открывает дыру в NAT A)", 420, 145);
+
+    // Step 2: B пробивает
+    nCtx.strokeStyle = "#22c55e";
+    nCtx.lineWidth = 2;
+    nCtx.setLineDash([4, 4]);
+    nCtx.beginPath();
+    nCtx.moveTo(560, 130); nCtx.lineTo(290, 170);
+    nCtx.stroke();
+    nCtx.setLineDash([]);
+    nCtx.fillStyle = "#22c55e";
+    nCtx.textAlign = "center";
+    nCtx.fillText("2. B→A: проходит через открытую дыру NAT A!", 420, 165);
+
+    // Connected
+    nCtx.strokeStyle = "#3fb950";
+    nCtx.lineWidth = 3;
+    nCtx.beginPath();
+    nCtx.moveTo(140, 200); nCtx.lineTo(700, 200);
+    nCtx.stroke();
+    nCtx.fillStyle = "#3fb950";
+    nCtx.font = "bold 12px monospace";
+    nCtx.textAlign = "center";
+    nCtx.fillText("3. ✅ P2P Connected!", 420, 215);
+
+    document.getElementById("nat-desc").textContent = "UDP Hole Punching: оба пира одновременно пробивают дыры в своих NAT. Пакеты проходят через открытые дыры. Работает для большинства NAT кроме Symmetric.";
+  }
+}
+
+showNAT("full-cone");
+
+// ─── ICE Config Builder ─────────────────────────
+function buildConfig(type) {
+  const configs = {
+    minimal: {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+      ],
+    },
+    production: {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+          urls: [
+            "turn:turn.example.com:3478?transport=udp",
+            "turn:turn.example.com:3478?transport=tcp",
+            "turns:turn.example.com:5349",
+          ],
+          username: "user_token",
+          credential: "generated_credential",
+        },
+      ],
+      iceTransportPolicy: "all",
+      bundlePolicy: "max-bundle",
+      rtcpMuxPolicy: "require",
+    },
+    "relay-only": {
+      iceServers: [{
+        urls: "turn:turn.example.com:3478",
+        username: "user",
+        credential: "password",
+      }],
+      iceTransportPolicy: "relay",
+    },
+  };
+
+  const comments = {
+    minimal: "// Подходит для разработки и большинства пользователей\n// ~85% успешных подключений без TURN\n",
+    production: "// Production: STUN + TURN UDP + TURN TCP + TURNS (TLS)\n// TCP/TLS проходит через большинство корпоративных файрволов\n// ~99% успешных подключений\n",
+    "relay-only": "// Все данные через TURN relay\n// 100% работает, но высокий latency и нагрузка на сервер\n// Используй только для debug или принудительного relay\n",
+  };
+
+  document.getElementById("config-display").textContent =
+    comments[type] + JSON.stringify(configs[type], null, 2);
+}
+</script>
+</body>
+</html>

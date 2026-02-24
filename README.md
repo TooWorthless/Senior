@@ -16,7 +16,7 @@
 | 02 | [CSS](./02-css/README.md) | Cascade, Flexbox, Grid, Custom Properties, анимации, архитектура | ✅ Готов |
 | 03 | [JavaScript](./03-javascript/README.md) | Типы, scope, async, Event Loop, алгоритмы, сортировки | ✅ Готов |
 | 04 | [JavaScript & DOM](./04-javascript-dom/README.md) | DOM API, Events, Virtual DOM, MutationObserver, Canvas/WebGL | ✅ Готов |
-| 05 | WebSockets / WebRTC | ws протокол, Socket.IO, WebRTC peer-to-peer, STUN/TURN, signaling | ⏳ Планируется |
+| 05 | [WebSockets / WebRTC](./05-websockets-webrtc/README.md) | ws протокол, Reconnection, WebRTC P2P, STUN/TURN, signaling, real-time patterns | ✅ Готов |
 
 ### Фреймворки и UI
 

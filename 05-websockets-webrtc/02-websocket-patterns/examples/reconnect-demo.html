@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Patterns</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: monospace; padding: 20px; background: #0d1117; color: #c9d1d9; max-width: 900px; }
+    .box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
+    button { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 3px; font-family: monospace; font-size: 13px; }
+    button.red  { background: #b91c1c; }
+    button.blue { background: #1d4ed8; }
+    input { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 6px 10px; border-radius: 4px; font-family: monospace; }
+    h2 { color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 0; }
+    .log { background: #010409; padding: 10px; border-radius: 6px; max-height: 220px; overflow-y: auto; font-size: 12px; }
+    .log div { padding: 2px 0; border-bottom: 1px solid #0d1117; }
+    .sent { color: #3b82f6; } .recv { color: #3fb950; } .sys { color: #f59e0b; } .err { color: #f87171; } .warn { color: #fb923c; }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .badge-open { background: #1a4731; color: #3fb950; }
+    .badge-closed { background: #1c1c1c; color: #8b949e; }
+    .badge-retry { background: #92400e; color: #fbbf24; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .meter { height: 8px; background: #21262d; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+    .meter-fill { height: 100%; background: #3b82f6; transition: width 0.3s; border-radius: 4px; }
+  </style>
+</head>
+<body>
+<h1>WebSocket Patterns</h1>
+<p style="color:#8b949e;font-size:13px">Запусти <code>node ws-server.js</code> для подключения к локальному серверу. Демо reconnection работает автономно.</p>
+
+<!-- ─── Reconnection с backoff ─────── -->
+<div class="box">
+  <h2>Reconnection с Exponential Backoff</h2>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+    <input id="rws-url" value="ws://localhost:8081" style="width:220px">
+    <button onclick="rws_connect()">Connect</button>
+    <button class="red" onclick="rws_disconnect()">Disconnect</button>
+    <span>Статус: <span class="badge badge-closed" id="rws-status">CLOSED</span></span>
+    <span style="color:#8b949e;font-size:12px">Попыток: <span id="rws-retries">0</span></span>
+  </div>
+  <div class="log" id="rws-log"></div>
+
+  <div style="margin-top:10px;color:#8b949e;font-size:12px">
+    <strong>Backoff формула:</strong> delay = min(minDelay × 2^retries, maxDelay) ± jitter(20%)<br>
+    minDelay=1s, maxDelay=30s → delays: 1s, 2s, 4s, 8s, 16s, 30s, 30s...
+  </div>
+</div>
+
+<!-- ─── Heartbeat демо ────────────── -->
+<div class="box">
+  <h2>Heartbeat / Keep-alive</h2>
+  <div class="grid2">
+    <div>
+      <div style="margin-bottom:8px">
+        <button onclick="heartbeat_start()">Запустить heartbeat</button>
+        <button class="red" onclick="heartbeat_stop()">Стоп</button>
+      </div>
+      <div class="log" id="hb-log"></div>
+    </div>
+    <div>
+      <div style="color:#8b949e;font-size:12px;margin-bottom:8px">Временна́я шкала</div>
+      <canvas id="hb-canvas" width="380" height="160" style="background:#010409;border-radius:4px;display:block"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ─── JSON-RPC ──────────────────── -->
+<div class="box">
+  <h2>JSON-RPC over WebSocket</h2>
+  <p style="color:#8b949e;font-size:12px;margin-top:0">Требует запущенный ws-server.js</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <input id="rpc-url" value="ws://localhost:8081" style="width:220px">
+    <button onclick="rpc_connect()">Connect RPC</button>
+  </div>
+  <br>
+  <input id="rpc-name" placeholder="Твоё имя" style="width:140px">
+  <button onclick="rpc_setName()" id="btn-rpc-setname" disabled>setName</button>
+  <input id="rpc-room" placeholder="Комната" value="general" style="width:120px">
+  <button onclick="rpc_join()" id="btn-rpc-join" disabled>joinRoom</button>
+  <br><br>
+  <input id="rpc-msg" placeholder="Сообщение в комнату" style="width:250px">
+  <button onclick="rpc_send()" id="btn-rpc-send" disabled>sendMessage</button>
+  <button onclick="rpc_stats()" id="btn-rpc-stats" disabled>stats</button>
+  <div class="log" id="rpc-log" style="margin-top:8px"></div>
+</div>
+
+<!-- ─── Backpressure демо ─────────── -->
+<div class="box">
+  <h2>Backpressure — bufferedAmount</h2>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+    <button onclick="bp_start(false)">❌ Без backpressure</button>
+    <button class="blue" onclick="bp_start(true)">✅ С backpressure</button>
+    <button class="red" onclick="bp_stop()">Стоп</button>
+    <span style="color:#8b949e;font-size:12px">Требует ws-server.js</span>
+  </div>
+  <div>
+    <span style="font-size:12px">bufferedAmount: <strong id="bp-buffered">0</strong> bytes</span>
+    <div class="meter"><div class="meter-fill" id="bp-meter" style="width:0%"></div></div>
+  </div>
+  <div class="log" id="bp-log" style="margin-top:8px"></div>
+</div>
+
+<script>
+// ─── Утилиты ────────────────────────────────────
+function logTo(id, text, type = "sys") {
+  const container = document.getElementById(id);
+  const ts = new Date().toISOString().slice(11, 23);
+  const prefix = { sent:"→", recv:"←", sys:"·", err:"✗", warn:"!" }[type] || "·";
+  const div = document.createElement("div");
+  div.className = type;
+  div.textContent = `[${ts}] ${prefix} ${text}`;
+  container.prepend(div);
+  if (container.children.length > 100) container.lastElementChild.remove();
+}
+
+// ─── ReconnectingWebSocket ──────────────────────
+class ReconnectingWebSocket {
+  constructor(url, { minDelay=1000, maxDelay=30000, multiplier=2, jitter=0.2, maxRetries=10 } = {}) {
+    this.url = url;
+    this.minDelay = minDelay; this.maxDelay = maxDelay;
+    this.multiplier = multiplier; this.jitter = jitter;
+    this.maxRetries = maxRetries;
+    this._retries = 0; this._delay = minDelay;
+    this._ws = null; this._shouldClose = false;
+    this._queue = [];
+    this.onopen = null; this.onmessage = null;
+    this.onclose = null; this.onerror = null;
+    this.onreconnect = null;
+  }
+
+  connect() { this._connect(); return this; }
+
+  _connect() {
+    try {
+      this._ws = new WebSocket(this.url);
+    } catch(e) {
+      this._scheduleReconnect(`create error: ${e.message}`);
+      return;
+    }
+    this._ws.binaryType = "arraybuffer";
+
+    this._ws.onopen = (e) => {
+      this._retries = 0; this._delay = this.minDelay;
+      while (this._queue.length) this._ws.send(this._queue.shift());
+      this.onopen?.(e);
+    };
+    this._ws.onmessage = (e) => this.onmessage?.(e);
+    this._ws.onerror = (e) => this.onerror?.(e);
+    this._ws.onclose = (e) => {
+      this.onclose?.(e);
+      if (this._shouldClose) return;
+      if (e.code === 4001 || e.code === 1008) return; // не переподключаемся
+      this._scheduleReconnect(`code ${e.code}`);
+    };
+  }
+
+  _scheduleReconnect(reason) {
+    if (this._retries >= this.maxRetries) return;
+    this._retries++;
+    const base = Math.min(this._delay * this.multiplier, this.maxDelay);
+    const d = base + (Math.random() * 2 - 1) * base * this.jitter;
+    this._delay = base;
+    this.onreconnect?.({ attempt: this._retries, delay: d, reason });
+    setTimeout(() => this._connect(), d);
+  }
+
+  send(data) {
+    if (this._ws?.readyState === 1) this._ws.send(data);
+    else this._queue.push(data);
+  }
+
+  close(code=1000, reason="") { this._shouldClose = true; this._ws?.close(code, reason); }
+
+  get readyState() { return this._ws?.readyState ?? 3; }
+  get bufferedAmount() { return this._ws?.bufferedAmount ?? 0; }
+}
+
+// ─── Reconnection демо ──────────────────────────
+let rws = null;
+
+function rws_connect() {
+  const url = document.getElementById("rws-url").value;
+  if (rws) { rws.close(); }
+
+  rws = new ReconnectingWebSocket(url, { minDelay: 1000, maxDelay: 15000, maxRetries: 8 });
+  rws.connect();
+
+  rws.onopen = () => {
+    document.getElementById("rws-status").className = "badge badge-open";
+    document.getElementById("rws-status").textContent = "OPEN";
+    document.getElementById("rws-retries").textContent = "0";
+    logTo("rws-log", "Connected!", "sys");
+  };
+
+  rws.onmessage = (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      logTo("rws-log", JSON.stringify(d).slice(0, 100), "recv");
+    } catch { logTo("rws-log", e.data, "recv"); }
+  };
+
+  rws.onclose = (e) => {
+    document.getElementById("rws-status").className = "badge badge-closed";
+    document.getElementById("rws-status").textContent = "CLOSED";
+    logTo("rws-log", `Closed: code=${e.code} wasClean=${e.wasClean}`, "sys");
+  };
+
+  rws.onreconnect = ({ attempt, delay, reason }) => {
+    document.getElementById("rws-status").className = "badge badge-retry";
+    document.getElementById("rws-status").textContent = `RETRY #${attempt}`;
+    document.getElementById("rws-retries").textContent = attempt;
+    logTo("rws-log", `Reconnect #${attempt} in ${(delay/1000).toFixed(1)}s (${reason})`, "warn");
+  };
+
+  rws.onerror = () => logTo("rws-log", "Error (WebSocket error)", "err");
+
+  logTo("rws-log", `Connecting to ${url}...`);
+}
+
+function rws_disconnect() {
+  rws?.close(1000, "User closed");
+  logTo("rws-log", "Disconnected by user (no reconnect)", "sys");
+}
+
+// ─── Heartbeat демо ─────────────────────────────
+let hbInterval = null;
+let hbCanvas, hbCtx;
+const hbTimeline = []; // {type, ts}
+
+function heartbeat_start() {
+  heartbeat_stop();
+  hbCanvas = document.getElementById("hb-canvas");
+  hbCtx = hbCanvas.getContext("2d");
+
+  let pingCount = 0;
+  const startTs = Date.now();
+
+  hbInterval = setInterval(() => {
+    pingCount++;
+    const ts = Date.now() - startTs;
+    hbTimeline.push({ type: "ping", ts, id: pingCount });
+    logTo("hb-log", `→ PING #${pingCount} (${(ts/1000).toFixed(1)}s)`, "sent");
+
+    // Симулируем pong через 30-80ms
+    const delay = 30 + Math.random() * 50;
+    setTimeout(() => {
+      hbTimeline.push({ type: "pong", ts: ts + delay, id: pingCount });
+      logTo("hb-log", `← PONG #${pingCount} (+${delay.toFixed(0)}ms)`, "recv");
+      drawHeartbeatTimeline();
+    }, delay);
+
+    drawHeartbeatTimeline();
+  }, 2500); // Быстро для демо (в реальности 25s)
+
+  logTo("hb-log", "Heartbeat started (interval: 2.5s для демо)", "sys");
+}
+
+function heartbeat_stop() {
+  clearInterval(hbInterval);
+  hbInterval = null;
+  hbTimeline.length = 0;
+  if (hbCtx) { hbCtx.clearRect(0, 0, 380, 160); }
+  logTo("hb-log", "Heartbeat stopped", "sys");
+}
+
+function drawHeartbeatTimeline() {
+  if (!hbCtx) return;
+  const W = 380, H = 160;
+  hbCtx.fillStyle = "#010409";
+  hbCtx.fillRect(0, 0, W, H);
+
+  if (hbTimeline.length === 0) return;
+  const maxTs = Math.max(...hbTimeline.map(e => e.ts));
+  const minTs = hbTimeline[0].ts;
+  const range = Math.max(maxTs - minTs, 10000);
+
+  hbCtx.fillStyle = "#30363d";
+  hbCtx.fillRect(0, H/2 - 1, W, 2);
+
+  for (const event of hbTimeline) {
+    const x = ((event.ts - minTs) / range) * (W - 40) + 20;
+    const isPing = event.type === "ping";
+    const color = isPing ? "#3b82f6" : "#3fb950";
+    const y = isPing ? H/2 - 30 : H/2 + 10;
+
+    hbCtx.beginPath();
+    hbCtx.arc(x, y, 5, 0, Math.PI * 2);
+    hbCtx.fillStyle = color;
+    hbCtx.fill();
+
+    hbCtx.fillStyle = color;
+    hbCtx.font = "10px monospace";
+    hbCtx.textAlign = "center";
+    hbCtx.fillText(isPing ? "PING" : "PONG", x, isPing ? y - 10 : y + 18);
+    hbCtx.fillText(`#${event.id}`, x, isPing ? y - 20 : y + 28);
+
+    // Линия ping→pong
+    if (!isPing) {
+      const pingEvent = hbTimeline.find(e => e.type === "ping" && e.id === event.id);
+      if (pingEvent) {
+        const px = ((pingEvent.ts - minTs) / range) * (W - 40) + 20;
+        hbCtx.beginPath();
+        hbCtx.moveTo(px, H/2 - 25);
+        hbCtx.lineTo(x, H/2 + 5);
+        hbCtx.strokeStyle = "#4ade8055";
+        hbCtx.lineWidth = 1;
+        hbCtx.stroke();
+      }
+    }
+  }
+}
+
+// ─── JSON-RPC WebSocket ─────────────────────────
+class JsonRpcWS {
+  constructor() { this.ws = null; this.pending = new Map(); this.nextId = 0; this.handlers = new Map(); }
+
+  connect(url) {
+    this.ws = new WebSocket(url);
+    this.ws.onmessage = (e) => this._dispatch(JSON.parse(e.data));
+    return new Promise((resolve, reject) => {
+      this.ws.onopen = resolve;
+      this.ws.onerror = reject;
+    });
+  }
+
+  call(method, params={}) {
+    return new Promise((resolve, reject) => {
+      const id = ++this.nextId;
+      this.pending.set(id, { resolve, reject });
+      this.ws.send(JSON.stringify({ jsonrpc:"2.0", id, method, params }));
+      setTimeout(() => {
+        if (this.pending.has(id)) { this.pending.delete(id); reject(new Error("RPC timeout")); }
+      }, 5000);
+    });
+  }
+
+  on(event, handler) { this.handlers.set(event, handler); }
+
+  _dispatch(msg) {
+    if (msg.type === "welcome" || msg.type === "event" || msg.type === "message") {
+      this.handlers.get(msg.type || msg.event)?.(msg);
+      logTo("rpc-log", JSON.stringify(msg).slice(0,100), "recv");
+      return;
+    }
+    if (msg.id !== undefined) {
+      const p = this.pending.get(msg.id);
+      if (!p) return;
+      this.pending.delete(msg.id);
+      if (msg.error) p.reject(new Error(msg.error.message));
+      else p.resolve(msg.result);
+    }
+  }
+}
+
+let rpc = null;
+let rpcConnected = false;
+
+async function rpc_connect() {
+  const url = document.getElementById("rpc-url").value;
+  rpc = new JsonRpcWS();
+  try {
+    await rpc.connect(url);
+    rpcConnected = true;
+    ["btn-rpc-setname","btn-rpc-join","btn-rpc-send","btn-rpc-stats"].forEach(id => {
+      document.getElementById(id).disabled = false;
+    });
+    logTo("rpc-log", `Connected to ${url}`, "sys");
+  } catch(e) {
+    logTo("rpc-log", `Connection failed. Запусти node ws-server.js`, "err");
+  }
+}
+
+async function rpc_setName() {
+  if (!rpc || !rpcConnected) return;
+  const name = document.getElementById("rpc-name").value || "Guest";
+  try {
+    const res = await rpc.call("setName", { name });
+    logTo("rpc-log", `setName → ${JSON.stringify(res)}`, "sent");
+  } catch(e) { logTo("rpc-log", `Error: ${e.message}`, "err"); }
+}
+
+async function rpc_join() {
+  if (!rpc || !rpcConnected) return;
+  const room = document.getElementById("rpc-room").value || "general";
+  try {
+    const res = await rpc.call("joinRoom", { room });
+    logTo("rpc-log", `joinRoom(${room}) → members: ${JSON.stringify(res.members)}`, "sent");
+  } catch(e) { logTo("rpc-log", `Error: ${e.message}`, "err"); }
+}
+
+async function rpc_send() {
+  if (!rpc || !rpcConnected) return;
+  const room = document.getElementById("rpc-room").value || "general";
+  const text = document.getElementById("rpc-msg").value;
+  try {
+    const res = await rpc.call("sendMessage", { room, text });
+    logTo("rpc-log", `→ sendMessage: ${text}`, "sent");
+  } catch(e) { logTo("rpc-log", `Error: ${e.message}`, "err"); }
+}
+
+async function rpc_stats() {
+  if (!rpc || !rpcConnected) return;
+  try {
+    const res = await rpc.call("stats");
+    logTo("rpc-log", `stats: ${JSON.stringify(res)}`, "recv");
+  } catch(e) { logTo("rpc-log", `Error: ${e.message}`, "err"); }
+}
+
+// ─── Backpressure демо ──────────────────────────
+let bpWs = null, bpRunning = false, bpInterval = null;
+
+function bp_start(withBackpressure) {
+  if (!bpWs || bpWs.readyState !== 1) {
+    bpWs = new WebSocket(document.getElementById("rpc-url")?.value || "ws://localhost:8081");
+    bpWs.onopen = () => bp_run(withBackpressure);
+    bpWs.onerror = () => logTo("bp-log", "Не удалось подключиться. Нужен ws-server.js", "err");
+  } else {
+    bp_run(withBackpressure);
+  }
+}
+
+function bp_run(withBackpressure) {
+  bpRunning = true;
+  let sent = 0;
+  const data = JSON.stringify({ jsonrpc:"2.0", id:0, method:"ping", params:{} });
+  const MAX_BUFFER = 32 * 1024;
+
+  logTo("bp-log", `Старт: ${withBackpressure ? "С" : "БЕЗ"} backpressure`, "sys");
+
+  bpInterval = setInterval(() => {
+    if (!bpRunning || bpWs.readyState !== 1) { clearInterval(bpInterval); return; }
+
+    if (withBackpressure && bpWs.bufferedAmount > MAX_BUFFER) {
+      const buf = bpWs.bufferedAmount;
+      document.getElementById("bp-buffered").textContent = buf;
+      document.getElementById("bp-meter").style.width = Math.min(buf / MAX_BUFFER * 100, 100) + "%";
+      document.getElementById("bp-meter").style.background = "#f59e0b";
+      logTo("bp-log", `⏸ Пауза: bufferedAmount=${buf} > ${MAX_BUFFER} (backpressure)`, "warn");
+      return;
+    }
+
+    bpWs.send(data);
+    sent++;
+    const buf = bpWs.bufferedAmount;
+    document.getElementById("bp-buffered").textContent = buf;
+    const pct = Math.min(buf / MAX_BUFFER * 100, 100);
+    document.getElementById("bp-meter").style.width = pct + "%";
+    document.getElementById("bp-meter").style.background = pct > 80 ? "#f87171" : "#3b82f6";
+
+    if (sent % 50 === 0) {
+      logTo("bp-log", `Отправлено: ${sent} | bufferedAmount: ${buf}`, "sys");
+    }
+  }, 1);
+}
+
+function bp_stop() {
+  bpRunning = false;
+  clearInterval(bpInterval);
+  bpWs?.close();
+  document.getElementById("bp-meter").style.width = "0%";
+  document.getElementById("bp-buffered").textContent = "0";
+  logTo("bp-log", "Остановлено", "sys");
+}
+</script>
+</body>
+</html>
