@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Responsive Images — srcset, sizes, picture</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; max-width: 1200px; margin: 0 auto; }
+    .demo { border: 1px solid #ccc; padding: 1rem; margin: 1.5rem 0; border-radius: 6px; }
+    .demo h2 { margin-top: 0; font-size: 1rem; color: #333; }
+    img, picture img { max-width: 100%; height: auto; display: block; }
+  </style>
+</head>
+<body>
+
+  <h1>Responsive Images</h1>
+
+  <!-- ============================================================
+       1. srcset + sizes: resolution switching
+       Одно изображение, разные размеры файлов
+       ============================================================ -->
+  <div class="demo">
+    <h2>1. srcset + sizes — resolution switching</h2>
+    <p>Откройте DevTools → Network, посмотрите какой файл загрузился.</p>
+
+    <!--
+      sizes читается как CSS media queries: первое совпадение побеждает.
+      Последнее значение — default (без media query).
+
+      Логика браузера:
+      1. Вычислить display size по sizes
+      2. Умножить на window.devicePixelRatio
+      3. Выбрать ближайший кандидат из srcset
+    -->
+    <img
+      alt="Горный пейзаж"
+      src="/images/mountain-800.jpg"
+      srcset="
+        /images/mountain-400.jpg   400w,
+        /images/mountain-800.jpg   800w,
+        /images/mountain-1200.jpg 1200w,
+        /images/mountain-1600.jpg 1600w,
+        /images/mountain-2400.jpg 2400w
+      "
+      sizes="
+        (max-width: 480px)  calc(100vw - 2rem),
+        (max-width: 768px)  calc(100vw - 3rem),
+        (max-width: 1200px) calc(50vw - 2rem),
+        600px
+      "
+      width="800"
+      height="533"
+      loading="lazy"
+    >
+
+    <!--
+      РАСПРОСТРАНЁННЫЕ ОШИБКИ в sizes:
+
+      ❌ sizes="100vw" для колоночного layout (грузит слишком большое)
+      ❌ Нет sizes совсем (браузер предполагает 100vw)
+      ❌ Сложные calc() с переменными — браузер не понимает CSS переменные в sizes
+      ✅ Простые значения: 100vw, 50vw, 33vw, конкретные px
+    -->
+  </div>
+
+  <!-- ============================================================
+       2. <picture>: format switching (AVIF → WebP → JPEG)
+       ============================================================ -->
+  <div class="demo">
+    <h2>2. &lt;picture&gt; — format switching (AVIF → WebP → JPEG)</h2>
+
+    <!--
+      Браузер проверяет source по порядку.
+      Первый поддерживаемый тип — используется.
+      <img> — всегда последний, fallback.
+    -->
+    <picture>
+      <source
+        type="image/avif"
+        srcset="
+          /images/product-400.avif   400w,
+          /images/product-800.avif   800w,
+          /images/product-1200.avif 1200w
+        "
+        sizes="(max-width: 600px) 100vw, 50vw"
+      >
+      <source
+        type="image/webp"
+        srcset="
+          /images/product-400.webp   400w,
+          /images/product-800.webp   800w,
+          /images/product-1200.webp 1200w
+        "
+        sizes="(max-width: 600px) 100vw, 50vw"
+      >
+      <!--
+        alt, width, height, loading, fetchpriority — только на <img>!
+        <source> эти атрибуты не имеет.
+      -->
+      <img
+        src="/images/product-800.jpg"
+        alt="Продукт — кофемашина DeLonghi"
+        width="800"
+        height="600"
+        loading="lazy"
+      >
+    </picture>
+  </div>
+
+  <!-- ============================================================
+       3. <picture>: art direction — разная кадрировка
+       ============================================================ -->
+  <div class="demo">
+    <h2>3. &lt;picture&gt; — art direction</h2>
+    <p>Измените размер окна: мобильная и десктопная версии — разные кадрировки.</p>
+
+    <picture>
+      <!--
+        Мобильная: портретный кроп, акцент на лице
+        media query проверяется как CSS media query
+      -->
+      <source
+        media="(max-width: 767px)"
+        type="image/webp"
+        srcset="/images/team-mobile.webp"
+        width="390"
+        height="520"
+      >
+      <!--
+        Планшет: квадратный кроп
+      -->
+      <source
+        media="(max-width: 1023px)"
+        type="image/webp"
+        srcset="/images/team-tablet.webp"
+        width="768"
+        height="768"
+      >
+      <!--
+        Десктоп: широкий горизонтальный кроп
+        <img> — fallback без media query
+      -->
+      <img
+        src="/images/team-desktop.jpg"
+        alt="Команда разработчиков на встрече"
+        width="1440"
+        height="810"
+        loading="lazy"
+      >
+    </picture>
+  </div>
+
+  <!-- ============================================================
+       4. LCP изображение — критическое для Core Web Vitals
+       ============================================================ -->
+  <div class="demo">
+    <h2>4. LCP изображение — максимальный приоритет</h2>
+
+    <!--
+      Для LCP:
+      ✅ fetchpriority="high"
+      ✅ loading="eager" (явно, не полагаться на default)
+      ✅ preload в <head>
+      ✅ width/height (предотвращает CLS)
+      ❌ loading="lazy" — НЕЛЬЗЯ
+      ❌ fetchpriority="low" — НЕЛЬЗЯ
+    -->
+    <picture>
+      <source type="image/avif" srcset="/images/hero.avif" width="1200" height="630">
+      <source type="image/webp" srcset="/images/hero.webp" width="1200" height="630">
+      <img
+        src="/images/hero.jpg"
+        alt="Главный баннер — наши услуги"
+        width="1200"
+        height="630"
+        fetchpriority="high"
+        loading="eager"
+      >
+    </picture>
+  </div>
+
+  <!-- ============================================================
+       5. srcset x дескриптор — для фиксированных размеров
+       ============================================================ -->
+  <div class="demo">
+    <h2>5. srcset с x-дескриптором — иконки и аватары</h2>
+
+    <!--
+      x-дескриптор проще для фиксированных размеров.
+      Браузер смотрит только на DPR.
+      sizes НЕ нужен.
+    -->
+    <img
+      src="/images/avatar-48.png"
+      srcset="
+        /images/avatar-48.png  1x,
+        /images/avatar-96.png  2x,
+        /images/avatar-144.png 3x
+      "
+      alt="Аватар пользователя Иван"
+      width="48"
+      height="48"
+      loading="lazy"
+      style="border-radius: 50%"
+    >
+  </div>
+
+  <!--
+    ИТОГ — когда что использовать:
+
+    srcset + sizes:
+    ✅ Изображения с разными размерами в layout
+    ✅ Fluid изображения (% ширины)
+    ✅ Когда нужно только resolution switching
+
+    <picture> с type:
+    ✅ Поддержка современных форматов с fallback
+    ✅ Любое изображение в production
+
+    <picture> с media:
+    ✅ Art direction: разная кадрировка
+    ✅ Разные соотношения сторон mobile/desktop
+
+    srcset с x:
+    ✅ Аватары, иконки, логотипы — фиксированный размер
+  -->
+
+</body>
+</html>

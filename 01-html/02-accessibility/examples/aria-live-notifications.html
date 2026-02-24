@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>aria-live: уведомления для screen reader</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    button { margin: 0.5rem; padding: 0.5rem 1rem; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: #333;
+      color: #fff;
+      padding: 0.75rem 1.25rem;
+      border-radius: 6px;
+      display: none;
+    }
+    .toast.visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <h1>aria-live регионы</h1>
+
+  <!--
+    КРИТИЧЕСКИ ВАЖНО: aria-live регион должен существовать в DOM
+    ДО того, как в него вставляется контент.
+    Браузер регистрирует live regions при загрузке страницы.
+    Если создать элемент динамически — screen reader его проигнорирует.
+  -->
+
+  <!--
+    role="status" = aria-live="polite" + aria-atomic="true"
+    Используется для статусных сообщений.
+    Дочитает текущую фразу, потом объявит.
+  -->
+  <div
+    id="status-region"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+    class="sr-only"
+  >
+    <!-- JS вставляет сообщения сюда -->
+  </div>
+
+  <!--
+    role="alert" = aria-live="assertive" + aria-atomic="true" + aria-relevant="additions text"
+    Используется для критических ошибок.
+    Прерывает чтение.
+    Используйте редко — раздражает пользователя.
+  -->
+  <div
+    id="alert-region"
+    role="alert"
+    class="sr-only"
+  >
+    <!-- JS вставляет ошибки сюда -->
+  </div>
+
+  <!--
+    aria-live="polite" + aria-relevant="additions"
+    Для списков, которые пополняются (чат, лог).
+    Объявляет только добавленные элементы.
+  -->
+  <div
+    id="chat-region"
+    aria-live="polite"
+    aria-relevant="additions"
+    aria-label="Сообщения чата"
+  >
+    <!-- Сообщения добавляются сюда -->
+  </div>
+
+  <!-- UI controls -->
+  <button onclick="showStatus()">Показать статус (polite)</button>
+  <button onclick="showAlert()">Показать ошибку (assertive)</button>
+  <button onclick="addChatMessage()">Добавить сообщение в чат</button>
+  <button onclick="saveForm()">Сохранить форму (паттерн)</button>
+
+  <!-- Видимый toast для зрячих пользователей -->
+  <div id="toast" class="toast" role="presentation" aria-hidden="true">
+    <!-- Видимое сообщение (screen reader читает из sr-only региона) -->
+  </div>
+
+  <div id="chat-log" style="margin-top: 1rem; border: 1px solid #ccc; padding: 1rem; min-height: 100px;">
+    <h2>Чат</h2>
+  </div>
+
+  <script>
+    function announce(regionId, message) {
+      const region = document.getElementById(regionId);
+
+      /*
+        Паттерн "clear then set": очищаем, потом вставляем.
+        Некоторые screen readers не объявляют повторно одинаковый текст.
+        Очистка гарантирует, что следующее сообщение будет прочитано.
+      */
+      region.textContent = '';
+
+      // Небольшая задержка нужна для некоторых SR (особенно NVDA + Firefox)
+      requestAnimationFrame(() => {
+        region.textContent = message;
+      });
+    }
+
+    function showStatus() {
+      announce('status-region', 'Данные успешно обновлены');
+      showToast('Данные обновлены');
+    }
+
+    function showAlert() {
+      announce('alert-region', 'Ошибка: не удалось сохранить данные. Проверьте подключение к интернету.');
+      showToast('Ошибка сохранения');
+    }
+
+    let msgCount = 0;
+    function addChatMessage() {
+      msgCount++;
+      const chatLog = document.getElementById('chat-log');
+      const chatRegion = document.getElementById('chat-region');
+
+      /*
+        Для aria-relevant="additions" достаточно добавить элемент в регион.
+        Screen reader объявит только новое сообщение, не весь список.
+      */
+      const msg = document.createElement('p');
+      msg.textContent = `Пользователь ${msgCount}: Привет!`;
+
+      chatLog.appendChild(msg);
+      chatRegion.appendChild(msg.cloneNode(true));
+    }
+
+    function saveForm() {
+      /*
+        Паттерн для формы сохранения:
+        1. Показать индикатор загрузки (объявить через aria-live)
+        2. По завершении — показать результат
+      */
+      const statusRegion = document.getElementById('status-region');
+      statusRegion.textContent = '';
+
+      requestAnimationFrame(() => {
+        statusRegion.textContent = 'Сохранение...';
+
+        setTimeout(() => {
+          statusRegion.textContent = '';
+          requestAnimationFrame(() => {
+            statusRegion.textContent = 'Форма сохранена успешно';
+          });
+        }, 1500);
+      });
+
+      showToast('Сохранение...');
+      setTimeout(() => showToast('Сохранено!'), 1500);
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 3000);
+    }
+  </script>
+
+  <!--
+    ИТОГ:
+
+    Видимый toast (aria-hidden="true") + скрытый aria-live регион —
+    классический паттерн для уведомлений.
+
+    Зрячие пользователи видят toast.
+    Screen reader пользователи слышат aria-live сообщение.
+
+    Не используй toast как единственный носитель информации —
+    он исчезает и недоступен для screen reader.
+  -->
+
+</body>
+</html>

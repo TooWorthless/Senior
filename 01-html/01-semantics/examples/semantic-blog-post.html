@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Семантическая разметка блог-поста</title>
+</head>
+<body>
+
+  <!-- banner landmark: один <header> на уровне <body> -->
+  <header>
+    <a href="/" aria-label="На главную — Мой блог">
+      <img src="/logo.svg" alt="Мой блог" width="120" height="40">
+    </a>
+    <!-- navigation landmark с уникальным именем -->
+    <nav aria-label="Основная навигация">
+      <ul>
+        <li><a href="/blog">Блог</a></li>
+        <li><a href="/about">Обо мне</a></li>
+        <li><a href="/contact">Контакты</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- main landmark: единственный на странице -->
+  <main>
+
+    <!-- breadcrumb navigation -->
+    <nav aria-label="Хлебные крошки">
+      <ol>
+        <li><a href="/">Главная</a></li>
+        <li><a href="/blog">Блог</a></li>
+        <li aria-current="page">Семантика HTML</li>
+      </ol>
+    </nav>
+
+    <!--
+      <article> — самодостаточный контент.
+      Если вырвать из страницы — всё равно понятен.
+    -->
+    <article>
+      <!-- <header> внутри <article> НЕ создаёт landmark banner -->
+      <header>
+        <h1>Семантика HTML: почему это важно в 2025</h1>
+        <p>
+          Автор: <a href="/author/ivan" rel="author">Иван Петров</a>
+          ·
+          <!-- datetime в машиночитаемом формате ISO 8601 -->
+          <time datetime="2025-01-15T10:00:00+03:00">15 января 2025</time>
+        </p>
+        <!-- теги/категории поста -->
+        <p>Категории:
+          <a href="/tag/html" rel="tag">HTML</a>,
+          <a href="/tag/a11y" rel="tag">Доступность</a>
+        </p>
+      </header>
+
+      <!--
+        Структурный контент статьи.
+        <section> используем для именованных тематических разделов.
+      -->
+      <section aria-labelledby="section-why">
+        <h2 id="section-why">Зачем это нужно</h2>
+        <p>
+          Семантика влияет на <strong>SEO</strong>, доступность
+          и <em>долгосрочную поддерживаемость</em> кода.
+        </p>
+        <figure>
+          <img
+            src="/images/accessibility-tree.png"
+            alt="Схема Accessibility Tree: DOM → AOM → Screen Reader"
+            width="800"
+            height="450"
+            loading="lazy"
+          >
+          <figcaption>
+            Accessibility Tree — промежуточный слой между DOM и вспомогательными технологиями
+          </figcaption>
+        </figure>
+      </section>
+
+      <section aria-labelledby="section-elements">
+        <h2 id="section-elements">Ключевые элементы</h2>
+        <p>
+          Рассмотрим разницу между
+          <code>&lt;article&gt;</code>,
+          <code>&lt;section&gt;</code> и
+          <code>&lt;div&gt;</code>.
+        </p>
+
+        <!-- details/summary — нативный accordion без JS -->
+        <details>
+          <summary>Когда использовать <code>&lt;article&gt;</code>?</summary>
+          <p>
+            Когда контент самодостаточен: пост, карточка товара,
+            твит, виджет погоды, комментарий.
+          </p>
+        </details>
+
+        <details>
+          <summary>Когда использовать <code>&lt;section&gt;</code>?</summary>
+          <p>
+            Тематическая группировка, которая должна присутствовать
+            в оглавлении документа. Всегда добавляйте заголовок.
+          </p>
+        </details>
+      </section>
+
+      <!--
+        Комментарии — вложенные <article> внутри родительского <article>.
+        Каждый комментарий самодостаточен.
+      -->
+      <section aria-labelledby="comments-heading">
+        <h2 id="comments-heading">Комментарии</h2>
+
+        <article>
+          <header>
+            <h3>
+              <a href="/user/maria">Мария С.</a>
+            </h3>
+            <time datetime="2025-01-15T14:30:00+03:00">15 янв. в 14:30</time>
+          </header>
+          <p>Отличная статья, спасибо!</p>
+        </article>
+
+        <article>
+          <header>
+            <h3>
+              <a href="/user/alexey">Алексей К.</a>
+            </h3>
+            <time datetime="2025-01-16T09:15:00+03:00">16 янв. в 09:15</time>
+          </header>
+          <p>А что насчёт <mark>document outline algorithm</mark>?</p>
+        </article>
+      </section>
+
+      <!-- <footer> внутри <article> — не contentinfo landmark -->
+      <footer>
+        <address>
+          По вопросам статьи:
+          <a href="mailto:ivan@example.com">ivan@example.com</a>
+        </address>
+      </footer>
+    </article>
+
+    <!-- complementary landmark -->
+    <aside aria-label="Похожие статьи">
+      <h2>Читайте также</h2>
+      <ul>
+        <li><a href="/blog/aria">ARIA: полное руководство</a></li>
+        <li><a href="/blog/forms">Формы и Constraint Validation API</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <!-- contentinfo landmark: один <footer> на уровне <body> -->
+  <footer>
+    <p>
+      <small>© 2025 Мой блог. Все права защищены.</small>
+    </p>
+    <!-- Не оборачиваем в <nav> — не основная навигация -->
+    <ul>
+      <li><a href="/privacy">Политика конфиденциальности</a></li>
+      <li><a href="/terms">Условия использования</a></li>
+    </ul>
+  </footer>
+
+</body>
+</html>

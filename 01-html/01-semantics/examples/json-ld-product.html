@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>JSON-LD: разметка товара (Product schema)</title>
+
+  <!--
+    Product schema даёт Google данные для Rich Snippets:
+    цена, рейтинг, наличие — всё это может появиться прямо в поиске.
+
+    Критичные поля для Rich Results:
+    - name
+    - image
+    - offers (price, priceCurrency, availability)
+    - aggregateRating (если есть отзывы)
+  -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+
+    "name": "Механическая клавиатура Keychron K2",
+    "description": "Компактная беспроводная механическая клавиатура с RGB подсветкой",
+    "sku": "KCH-K2-RGB",
+    "brand": {
+      "@type": "Brand",
+      "name": "Keychron"
+    },
+    "image": [
+      "https://example.com/products/k2-front.jpg",
+      "https://example.com/products/k2-side.jpg"
+    ],
+
+    "offers": {
+      "@type": "Offer",
+      "url": "https://example.com/products/keychron-k2",
+      "priceCurrency": "RUB",
+      "price": "12990",
+      "priceValidUntil": "2025-12-31",
+      "availability": "https://schema.org/InStock",
+      "itemCondition": "https://schema.org/NewCondition",
+      "seller": {
+        "@type": "Organization",
+        "name": "Tech Shop"
+      }
+    },
+
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "bestRating": "5",
+      "worstRating": "1",
+      "ratingCount": "247"
+    },
+
+    "review": [
+      {
+        "@type": "Review",
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": "5",
+          "bestRating": "5"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Алексей К."
+        },
+        "reviewBody": "Отличная клавиатура, печатать одно удовольствие.",
+        "datePublished": "2025-01-10"
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <main>
+    <article itemscope itemtype="https://schema.org/Product">
+      <!--
+        Ниже — HTML-разметка товара.
+        JSON-LD выше полностью дублирует эти данные для поисковиков.
+        Можно использовать только JSON-LD без атрибутов itemscope/itemprop.
+        Показываем оба подхода для сравнения.
+      -->
+
+      <h1 itemprop="name">Механическая клавиатура Keychron K2</h1>
+
+      <img
+        itemprop="image"
+        src="/products/k2-front.jpg"
+        alt="Keychron K2 — вид спереди"
+        width="600"
+        height="400"
+      >
+
+      <div itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+        <p>
+          Цена:
+          <span itemprop="priceCurrency" content="RUB">₽</span>
+          <span itemprop="price" content="12990">12 990</span>
+        </p>
+        <link itemprop="availability" href="https://schema.org/InStock">
+        <p>В наличии</p>
+      </div>
+
+      <div itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
+        <span itemprop="ratingValue">4.8</span> / 5
+        (<span itemprop="ratingCount">247</span> отзывов)
+      </div>
+
+      <p itemprop="description">
+        Компактная беспроводная механическая клавиатура с RGB подсветкой
+      </p>
+    </article>
+  </main>
+
+  <!--
+    ВЫВОД:
+    Microdata (itemprop) жёстко привязана к HTML-структуре.
+    JSON-LD — отдельный блок данных. Предпочтительнее.
+
+    Если данные генерируются на сервере — JSON-LD проще поддерживать:
+    один шаблон, не нужно трогать HTML-компоненты.
+  -->
+
+</body>
+</html>

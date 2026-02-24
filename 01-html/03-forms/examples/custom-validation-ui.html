@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Кастомный UI валидации — novalidate + ARIA</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 480px; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    label .required-mark {
+      color: #c00;
+      margin-left: 2px;
+    }
+
+    input, select, textarea {
+      padding: 0.5rem 0.75rem;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #0066cc;
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.2);
+    }
+
+    /* Стиль для невалидного поля — только после взаимодействия */
+    input[aria-invalid="true"],
+    select[aria-invalid="true"],
+    textarea[aria-invalid="true"] {
+      border-color: #c00;
+    }
+
+    input[aria-invalid="true"]:focus {
+      box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.2);
+    }
+
+    /* Стиль для валидного поля */
+    input[aria-invalid="false"] {
+      border-color: #090;
+    }
+
+    .field-error {
+      color: #c00;
+      font-size: 0.85rem;
+      min-height: 1.2em; /* резервируем место чтобы не скакала раскладка */
+    }
+
+    .field-hint {
+      color: #666;
+      font-size: 0.8rem;
+    }
+
+    button[type="submit"] {
+      padding: 0.6rem 1.5rem;
+      background: #0066cc;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .form-success {
+      padding: 1rem;
+      background: #e6f4e6;
+      border: 1px solid #090;
+      border-radius: 6px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Кастомная валидация формы</h1>
+
+  <!--
+    novalidate — отключает нативный UI браузера при submit.
+    НЕ отключает Constraint Validation API — validity и checkValidity() работают.
+    Мы берём контроль над UI, но используем нативную логику.
+  -->
+  <form id="registration-form" novalidate>
+
+    <div class="field">
+      <label for="name">
+        Имя <span class="required-mark" aria-hidden="true">*</span>
+      </label>
+      <input
+        type="text"
+        id="name"
+        name="name"
+        required
+        minlength="2"
+        maxlength="50"
+        autocomplete="given-name"
+        aria-required="true"
+        aria-describedby="name-error"
+      >
+      <span
+        id="name-error"
+        class="field-error"
+        role="alert"
+        aria-live="polite"
+      ></span>
+    </div>
+
+    <div class="field">
+      <label for="email">
+        Email <span class="required-mark" aria-hidden="true">*</span>
+      </label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        required
+        autocomplete="email"
+        aria-required="true"
+        aria-describedby="email-error email-hint"
+      >
+      <span id="email-hint" class="field-hint">Например: user@example.com</span>
+      <span
+        id="email-error"
+        class="field-error"
+        role="alert"
+        aria-live="polite"
+      ></span>
+    </div>
+
+    <div class="field">
+      <label for="password">
+        Пароль <span class="required-mark" aria-hidden="true">*</span>
+      </label>
+      <input
+        type="password"
+        id="password"
+        name="password"
+        required
+        minlength="8"
+        pattern="(?=.*[A-Z])(?=.*[0-9]).{8,}"
+        autocomplete="new-password"
+        aria-required="true"
+        aria-describedby="password-error password-hint"
+      >
+      <span id="password-hint" class="field-hint">
+        Минимум 8 символов, одна заглавная буква и одна цифра
+      </span>
+      <span
+        id="password-error"
+        class="field-error"
+        role="alert"
+        aria-live="polite"
+      ></span>
+    </div>
+
+    <div class="field">
+      <label for="age">
+        Возраст <span class="required-mark" aria-hidden="true">*</span>
+      </label>
+      <input
+        type="number"
+        id="age"
+        name="age"
+        required
+        min="18"
+        max="120"
+        autocomplete="off"
+        aria-required="true"
+        aria-describedby="age-error"
+      >
+      <span
+        id="age-error"
+        class="field-error"
+        role="alert"
+        aria-live="polite"
+      ></span>
+    </div>
+
+    <!-- Видимый индикатор обязательных полей -->
+    <p>
+      <span class="required-mark" aria-hidden="true">*</span>
+      <small>Обязательные поля</small>
+    </p>
+
+    <button type="submit">Зарегистрироваться</button>
+  </form>
+
+  <div id="success-message" class="form-success" role="status">
+    Регистрация прошла успешно!
+  </div>
+
+  <script>
+    /*
+      Кастомные сообщения об ошибках по типу нарушения.
+      Нативные сообщения браузера — на системном языке, неконтролируемые.
+    */
+    const VALIDATION_MESSAGES = {
+      name: {
+        valueMissing: 'Пожалуйста, введите ваше имя',
+        tooShort: 'Имя должно содержать не менее 2 символов',
+        tooLong: 'Имя не должно превышать 50 символов',
+      },
+      email: {
+        valueMissing: 'Пожалуйста, введите email адрес',
+        typeMismatch: 'Введите корректный email адрес',
+      },
+      password: {
+        valueMissing: 'Пожалуйста, введите пароль',
+        tooShort: 'Пароль должен содержать не менее 8 символов',
+        patternMismatch: 'Пароль должен содержать заглавную букву и цифру',
+      },
+      age: {
+        valueMissing: 'Пожалуйста, введите ваш возраст',
+        rangeUnderflow: 'Вам должно быть не менее 18 лет',
+        rangeOverflow: 'Проверьте введённый возраст',
+        badInput: 'Введите числовое значение',
+      },
+    };
+
+    function getErrorMessage(input) {
+      const name = input.name;
+      const messages = VALIDATION_MESSAGES[name] || {};
+      const v = input.validity;
+
+      if (v.valueMissing)    return messages.valueMissing    || 'Поле обязательно';
+      if (v.typeMismatch)    return messages.typeMismatch    || 'Неверный формат';
+      if (v.patternMismatch) return messages.patternMismatch || 'Не соответствует формату';
+      if (v.tooShort)        return messages.tooShort        || 'Слишком короткое значение';
+      if (v.tooLong)         return messages.tooLong         || 'Слишком длинное значение';
+      if (v.rangeUnderflow)  return messages.rangeUnderflow  || 'Значение слишком маленькое';
+      if (v.rangeOverflow)   return messages.rangeOverflow   || 'Значение слишком большое';
+      if (v.stepMismatch)    return messages.stepMismatch    || 'Неверный шаг значения';
+      if (v.badInput)        return messages.badInput        || 'Неверный ввод';
+      if (v.customError)     return input.validationMessage;
+
+      return '';
+    }
+
+    function showError(input, message) {
+      const errorEl = document.getElementById(`${input.id}-error`);
+      if (!errorEl) return;
+
+      input.setAttribute('aria-invalid', 'true');
+      errorEl.textContent = message;
+    }
+
+    function clearError(input) {
+      const errorEl = document.getElementById(`${input.id}-error`);
+      if (!errorEl) return;
+
+      input.setAttribute('aria-invalid', 'false');
+      errorEl.textContent = '';
+    }
+
+    function validateField(input) {
+      // Сначала сбрасываем custom validity чтобы не мешала нативной
+      input.setCustomValidity('');
+
+      if (!input.checkValidity()) {
+        showError(input, getErrorMessage(input));
+        return false;
+      }
+
+      clearError(input);
+      return true;
+    }
+
+    // Валидация при потере фокуса (blur) — стандартный UX паттерн
+    // Не валидировать при вводе — раздражает пользователя
+    const form = document.getElementById('registration-form');
+    const inputs = form.querySelectorAll('input');
+
+    inputs.forEach(input => {
+      // blur: валидировать когда ушёл из поля
+      input.addEventListener('blur', () => {
+        validateField(input);
+      });
+
+      // input: убирать ошибку при исправлении
+      input.addEventListener('input', () => {
+        if (input.getAttribute('aria-invalid') === 'true') {
+          // Повторно валидировать только если поле уже было помечено невалидным
+          validateField(input);
+        }
+      });
+    });
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      let firstInvalid = null;
+      let allValid = true;
+
+      inputs.forEach(input => {
+        if (!validateField(input)) {
+          allValid = false;
+          if (!firstInvalid) firstInvalid = input;
+        }
+      });
+
+      if (!allValid) {
+        // Фокус на первое невалидное поле
+        firstInvalid.focus();
+        return;
+      }
+
+      // Успешная отправка
+      form.style.display = 'none';
+      document.getElementById('success-message').style.display = 'block';
+    });
+  </script>
+
+</body>
+</html>

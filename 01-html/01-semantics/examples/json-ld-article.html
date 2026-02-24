@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>JSON-LD: разметка статьи (Article schema)</title>
+
+  <!--
+    JSON-LD встраивается в <head>.
+    Не зависит от HTML-структуры — это главное преимущество перед Microdata.
+    Google рекомендует JSON-LD как предпочтительный формат.
+
+    Валидация: https://validator.schema.org/
+    Rich Results Test: https://search.google.com/test/rich-results
+  -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+
+    "headline": "Семантика HTML: почему это важно в 2025",
+    "description": "Разбираем семантические элементы HTML5, document outline и микроразметку.",
+
+    "image": [
+      "https://example.com/images/article-1x1.jpg",
+      "https://example.com/images/article-4x3.jpg",
+      "https://example.com/images/article-16x9.jpg"
+    ],
+
+    "datePublished": "2025-01-15T10:00:00+03:00",
+    "dateModified": "2025-01-20T12:00:00+03:00",
+
+    "author": {
+      "@type": "Person",
+      "name": "Иван Петров",
+      "url": "https://example.com/author/ivan"
+    },
+
+    "publisher": {
+      "@type": "Organization",
+      "name": "Frontend Blog",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://example.com/logo.png"
+      }
+    },
+
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://example.com/blog/html-semantics"
+    }
+  }
+  </script>
+
+  <!--
+    BreadcrumbList — отдельный JSON-LD блок.
+    Можно комбинировать несколько блоков на странице.
+  -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Главная",
+        "item": "https://example.com"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Блог",
+        "item": "https://example.com/blog"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Семантика HTML: почему это важно в 2025"
+      }
+    ]
+  }
+  </script>
+
+  <!--
+    FAQ — если статья содержит вопросы и ответы,
+    Google может показать их прямо в выдаче (Featured Snippet).
+  -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "В чём разница между article и section?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "article — самодостаточный контент (пост, карточка). section — тематическая группировка внутри документа."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Работает ли document outline algorithm в браузерах?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Нет. Алгоритм никогда не был реализован и убран из спецификации. Используйте строгую иерархию h1–h6."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <main>
+    <nav aria-label="Хлебные крошки">
+      <ol>
+        <li><a href="/">Главная</a></li>
+        <li><a href="/blog">Блог</a></li>
+        <li aria-current="page">Семантика HTML</li>
+      </ol>
+    </nav>
+
+    <article>
+      <header>
+        <h1>Семантика HTML: почему это важно в 2025</h1>
+        <p>
+          <a href="/author/ivan" rel="author">Иван Петров</a> ·
+          <time datetime="2025-01-15T10:00:00+03:00">15 января 2025</time>
+        </p>
+      </header>
+
+      <p>Контент статьи...</p>
+
+      <section aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Частые вопросы</h2>
+
+        <details>
+          <summary>В чём разница между article и section?</summary>
+          <p>article — самодостаточный контент (пост, карточка). section — тематическая группировка внутри документа.</p>
+        </details>
+
+        <details>
+          <summary>Работает ли document outline algorithm в браузерах?</summary>
+          <p>Нет. Алгоритм никогда не был реализован и убран из спецификации. Используйте строгую иерархию h1–h6.</p>
+        </details>
+      </section>
+    </article>
+  </main>
+
+</body>
+</html>

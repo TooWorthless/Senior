@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru" prefix="og: https://ogp.me/ns#">
+<head>
+  <!--
+    ПОЛНЫЙ <head> ДЛЯ СТАТЬИ БЛОГА
+    Порядок тегов — по рекомендации capo.js и Google:
+    1. charset и http-equiv
+    2. Viewport
+    3. Preconnect / resource hints
+    4. Title
+    5. Meta description и robots
+    6. Canonical
+    7. Open Graph
+    8. Twitter Card
+    9. JSON-LD
+    10. Favicon и иконки
+    11. Web App Manifest
+    12. CSS
+    13. Scripts
+  -->
+
+  <!-- 1. Кодировка — ПЕРВЫМ, чтобы браузер правильно парсил остальное -->
+  <meta charset="UTF-8">
+
+  <!-- 2. Viewport — нельзя запрещать zoom (WCAG 1.4.4) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- 3. Resource hints — как можно раньше -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="/fonts/Inter-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- LCP изображение — preload если знаем его заранее (SSR) -->
+  <link rel="preload" href="/images/html-semantics-og.jpg" as="image" fetchpriority="high">
+
+  <!-- 4. Title: ключевое слово + бренд, 50-60 символов -->
+  <title>Семантика HTML в 2025: полное руководство — Frontend Blog</title>
+
+  <!-- 5. Meta -->
+  <meta name="description" content="Разбираем семантические элементы HTML5, document outline algorithm, ARIA roles и микроразметку. Примеры кода и вопросы для интервью.">
+  <meta name="author" content="Иван Петров">
+  <meta name="robots" content="index, follow, max-snippet:160, max-image-preview:large">
+  <!-- Для Яндекса -->
+  <meta name="yandex-verification" content="VERIFICATION_TOKEN">
+  <!-- Google Search Console -->
+  <meta name="google-site-verification" content="VERIFICATION_TOKEN">
+
+  <!-- 6. Canonical — self-referencing, абсолютный URL -->
+  <link rel="canonical" href="https://blog.example.com/html/semantics-2025">
+
+  <!-- Альтернативные версии (RSS) -->
+  <link rel="alternate" type="application/rss+xml" href="https://blog.example.com/feed.xml" title="Frontend Blog RSS">
+
+  <!-- 7. Open Graph -->
+  <meta property="og:type"        content="article">
+  <meta property="og:title"       content="Семантика HTML в 2025: полное руководство">
+  <meta property="og:description" content="Семантические элементы HTML5, document outline, ARIA, микроразметка. Для senior разработчиков.">
+  <meta property="og:url"         content="https://blog.example.com/html/semantics-2025">
+  <meta property="og:site_name"   content="Frontend Blog">
+  <meta property="og:locale"      content="ru_RU">
+  <meta property="og:locale:alternate" content="en_US">
+
+  <!-- OG image: 1200×630, < 1MB, HTTPS -->
+  <meta property="og:image"        content="https://blog.example.com/images/html-semantics-og.jpg">
+  <meta property="og:image:secure_url" content="https://blog.example.com/images/html-semantics-og.jpg">
+  <meta property="og:image:width"  content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type"   content="image/jpeg">
+  <meta property="og:image:alt"    content="Схема семантической структуры HTML-документа">
+
+  <!-- Article-specific OG -->
+  <meta property="article:author"         content="https://blog.example.com/author/ivan">
+  <meta property="article:published_time" content="2025-01-15T10:00:00+03:00">
+  <meta property="article:modified_time"  content="2025-01-20T12:00:00+03:00">
+  <meta property="article:section"        content="HTML">
+  <meta property="article:tag"            content="HTML">
+  <meta property="article:tag"            content="Семантика">
+  <meta property="article:tag"            content="a11y">
+  <meta property="article:tag"            content="SEO">
+
+  <!-- 8. Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:site"        content="@frontendblog">
+  <meta name="twitter:creator"     content="@ivanpetrov">
+  <meta name="twitter:title"       content="Семантика HTML в 2025: полное руководство">
+  <meta name="twitter:description" content="Семантические элементы HTML5, document outline, ARIA, микроразметка.">
+  <meta name="twitter:image"       content="https://blog.example.com/images/html-semantics-og.jpg">
+  <meta name="twitter:image:alt"   content="Схема семантической структуры HTML-документа">
+
+  <!-- 9. JSON-LD structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Семантика HTML в 2025: полное руководство",
+    "description": "Разбираем семантические элементы HTML5, document outline algorithm, ARIA roles и микроразметку.",
+    "image": [
+      "https://blog.example.com/images/html-semantics-1x1.jpg",
+      "https://blog.example.com/images/html-semantics-4x3.jpg",
+      "https://blog.example.com/images/html-semantics-og.jpg"
+    ],
+    "datePublished": "2025-01-15T10:00:00+03:00",
+    "dateModified": "2025-01-20T12:00:00+03:00",
+    "author": {
+      "@type": "Person",
+      "name": "Иван Петров",
+      "url": "https://blog.example.com/author/ivan"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Frontend Blog",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://blog.example.com/logo-schema.png",
+        "width": 600,
+        "height": 60
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://blog.example.com/html/semantics-2025"
+    },
+    "inLanguage": "ru",
+    "keywords": ["HTML", "семантика", "a11y", "SEO", "frontend"]
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://blog.example.com" },
+      { "@type": "ListItem", "position": 2, "name": "HTML", "item": "https://blog.example.com/html" },
+      { "@type": "ListItem", "position": 3, "name": "Семантика HTML в 2025" }
+    ]
+  }
+  </script>
+
+  <!-- 10. Favicon и иконки -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+  <!-- 11. Web App Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0066cc">
+  <!-- iOS: не поддерживает manifest в полной мере -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Frontend Blog">
+
+  <!-- 12. CSS -->
+  <link rel="stylesheet" href="/styles/main.css">
+
+  <!-- 13. Scripts -->
+  <script src="/js/app.js" defer></script>
+  <script src="/analytics.js" async fetchpriority="low"></script>
+</head>
+<body>
+  <!-- Контент страницы -->
+  <main>
+    <article>
+      <h1>Семантика HTML в 2025: полное руководство</h1>
+      <!-- ... -->
+    </article>
+  </main>
+</body>
+</html>

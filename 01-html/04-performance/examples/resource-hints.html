@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+
+  <!--
+    ПОРЯДОК в <head> имеет значение.
+    Рекомендуемый порядок для максимальной производительности:
+
+    1. meta charset — первым, влияет на парсинг
+    2. preconnect/dns-prefetch — как можно раньше
+    3. preload критических ресурсов
+    4. title
+    5. CSS
+    6. остальные meta, scripts...
+  -->
+
+  <!-- 1. preconnect: устанавливаем соединения с третьими доменами заранее -->
+  <!--    DNS lookup + TCP + TLS — ~100-300ms экономии -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <!--
+    crossorigin обязателен для шрифтов — Google Fonts CDN использует CORS.
+    Два preconnect для Google Fonts — стандартный паттерн.
+  -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- dns-prefetch как fallback для браузеров без preconnect support -->
+  <link rel="dns-prefetch" href="https://cdn.example.com">
+  <link rel="dns-prefetch" href="https://api.example.com">
+
+  <!-- 2. preload критических ресурсов текущей страницы -->
+
+  <!-- LCP изображение: preload + fetchpriority="high" -->
+  <!--
+    as="image" — браузер знает тип и применит правильный кэш-ключ.
+    Без as= — ресурс загрузится с низким приоритетом и не совпадёт с <img>.
+  -->
+  <link
+    rel="preload"
+    href="/images/hero.webp"
+    as="image"
+    type="image/webp"
+    fetchpriority="high"
+  >
+
+  <!-- Критический шрифт: crossorigin ОБЯЗАТЕЛЕН -->
+  <link
+    rel="preload"
+    href="/fonts/Inter-Regular.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin
+  >
+
+  <!-- Критический JS (если нет defer) -->
+  <!-- <link rel="preload" href="/app.js" as="script"> -->
+
+  <!-- 3. Обычная загрузка CSS -->
+  <link rel="stylesheet" href="/styles/main.css">
+
+  <!-- 4. title -->
+  <title>Resource Hints — пример</title>
+
+  <!--
+    modulepreload: загружает ES-модуль и граф его зависимостей.
+    Без этого браузер узнает о зависимостях только после выполнения app.js.
+  -->
+  <link rel="modulepreload" href="/js/app.js">
+  <link rel="modulepreload" href="/js/utils.js">
+  <link rel="modulepreload" href="/js/api-client.js">
+
+  <!--
+    prefetch: для следующей вероятной страницы.
+    Загружается с низким приоритетом в idle time.
+    Идеально для: checkout после product page, шаг 2 после шага 1.
+  -->
+  <link rel="prefetch" href="/checkout">
+  <link rel="prefetch" href="/js/checkout-bundle.js" as="script">
+
+  <!-- Scripts: defer для зависимых, async для независимых -->
+  <script src="/js/vendor.js" defer></script>
+  <script src="/js/app.js" defer></script>
+
+  <!-- Аналитика: async + fetchpriority="low" — не мешает основному контенту -->
+  <script src="/analytics.js" async fetchpriority="low"></script>
+</head>
+<body>
+
+  <!--
+    LCP элемент: fetchpriority="high" + loading="eager" (явно, на случай глобального lazy)
+    width/height: резервируют место → предотвращают CLS
+  -->
+  <img
+    src="/images/hero.webp"
+    alt="Главный баннер"
+    width="1200"
+    height="600"
+    fetchpriority="high"
+    loading="eager"
+  >
+
+  <main>
+    <h1>Пример страницы с оптимизированной загрузкой</h1>
+
+    <!--
+      Изображения ниже fold: lazy + явные размеры.
+      Браузер загрузит их когда они приблизятся к viewport (~200px).
+    -->
+    <img
+      src="/images/product-1.webp"
+      alt="Товар 1"
+      width="400"
+      height="300"
+      loading="lazy"
+    >
+    <img
+      src="/images/product-2.webp"
+      alt="Товар 2"
+      width="400"
+      height="300"
+      loading="lazy"
+      fetchpriority="low"
+    >
+
+    <!--
+      iframe с lazy: карты, виджеты — не загружать до скролла.
+      title обязателен для доступности.
+    -->
+    <iframe
+      src="https://maps.example.com/embed"
+      loading="lazy"
+      title="Карта расположения офиса"
+      width="600"
+      height="400"
+    ></iframe>
+  </main>
+
+  <!--
+    ИТОГОВЫЕ ПРАВИЛА:
+    
+    ✅ preload: критический шрифт, LCP image, critical CSS
+    ✅ preconnect: Google Fonts, CDN, API (не более 3-4 — TLS handshake не бесплатен)
+    ✅ dns-prefetch: остальные third-party домены
+    ✅ prefetch: следующая страница пути пользователя
+    ✅ defer: зависимые скрипты
+    ✅ async: независимые (аналитика, реклама)
+    ✅ loading="lazy": все изображения ниже fold
+    ✅ fetchpriority="high": LCP image
+    ✅ fetchpriority="low": аналитика, ресурсы ниже fold
+    
+    ❌ preload без использования (console warning + пустая трата bandwidth)
+    ❌ preload шрифта без crossorigin (двойная загрузка)
+    ❌ loading="lazy" на LCP изображении (убивает LCP метрику)
+    ❌ изображение без width/height + lazy (CLS)
+    ❌ слишком много preconnect (TLS не бесплатен)
+  -->
+
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>div-суп vs семантика — сравнение</title>
+  <style>
+    .before, .after { border: 2px solid; padding: 1rem; margin: 2rem 0; }
+    .before { border-color: #c00; }
+    .after  { border-color: #090; }
+    .label  { font-weight: bold; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     ДО: div-суп
+     Проблемы:
+     - Нет landmark'ов — screen reader не может перемещаться по странице
+     - Нет heading hierarchy — непонятна структура документа
+     - class-имена несут смысл только для разработчика, не для браузера
+     - Нет implicit ARIA roles
+     ============================================================ -->
+<div class="before">
+  <div class="label">❌ ПЛОХО: div-суп</div>
+
+  <div class="header">
+    <div class="logo">Логотип</div>
+    <div class="nav">
+      <div class="nav-item"><a href="/">Главная</a></div>
+      <div class="nav-item"><a href="/about">О нас</a></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="hero">
+      <div class="hero-title">Добро пожаловать</div>
+      <div class="hero-subtitle">Мы делаем классные штуки</div>
+    </div>
+
+    <div class="posts">
+      <div class="post">
+        <div class="post-title">Первый пост</div>
+        <div class="post-meta">
+          <div class="author">Иван</div>
+          <div class="date">2025-01-15</div>
+        </div>
+        <div class="post-body">
+          <div class="paragraph">Контент поста...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="sidebar-title">Похожее</div>
+      <div class="sidebar-links">
+        <div><a href="/post-2">Пост 2</a></div>
+        <div><a href="/post-3">Пост 3</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="copyright">© 2025</div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     ПОСЛЕ: семантическая разметка
+     Улучшения:
+     - Landmark'ы: banner, main, nav, complementary, contentinfo
+     - Правильная heading hierarchy: h1 > h2
+     - Implicit ARIA roles без единого aria-атрибута
+     - Screen reader пользователь может перепрыгивать по регионам
+     - SEO: поисковик понимает структуру без CSS
+     ============================================================ -->
+<div class="after">
+  <div class="label">✅ ХОРОШО: семантика</div>
+
+  <!-- role="banner" автоматически -->
+  <header>
+    <a href="/">
+      <img src="/logo.svg" alt="Название компании" width="100" height="32">
+    </a>
+    <!-- role="navigation" автоматически -->
+    <nav aria-label="Основная навигация">
+      <ul>
+        <li><a href="/">Главная</a></li>
+        <li><a href="/about">О нас</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- role="main" автоматически -->
+  <main>
+    <!-- Заголовок страницы — единственный h1 -->
+    <h1>Добро пожаловать</h1>
+    <p>Мы делаем классные штуки</p>
+
+    <!-- role="article" автоматически -->
+    <article>
+      <header>
+        <!-- h2 — следующий уровень иерархии -->
+        <h2>Первый пост</h2>
+        <p>
+          Автор: Иван ·
+          <time datetime="2025-01-15">15 января 2025</time>
+        </p>
+      </header>
+      <p>Контент поста...</p>
+    </article>
+
+    <!-- role="complementary" автоматически -->
+    <aside aria-label="Похожие материалы">
+      <h2>Похожее</h2>
+      <ul>
+        <li><a href="/post-2">Пост 2</a></li>
+        <li><a href="/post-3">Пост 3</a></li>
+      </ul>
+    </aside>
+  </main>
+
+  <!-- role="contentinfo" автоматически -->
+  <footer>
+    <small>© 2025</small>
+  </footer>
+</div>
+
+<!--
+  ИТОГ:
+  Семантическая версия предоставляет браузеру и AT полную информацию
+  о структуре страницы без единого дополнительного атрибута.
+
+  Screen reader пользователь может:
+  - Нажать H → перейти к следующему заголовку
+  - Нажать R → перейти к следующему landmark region
+  - Нажать A → перейти к следующему article
+
+  В div-супе — всего этого нет.
+-->
+
+</body>
+</html>

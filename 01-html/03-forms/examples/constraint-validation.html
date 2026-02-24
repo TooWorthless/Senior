@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Constraint Validation API — полный разбор</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 600px; }
+    .demo { border: 1px solid #ccc; padding: 1rem; margin: 1.5rem 0; border-radius: 6px; }
+    .demo h2 { margin-top: 0; font-size: 1rem; }
+    pre { background: #f5f5f5; padding: 0.75rem; border-radius: 4px; font-size: 0.85rem; white-space: pre-wrap; }
+    input { padding: 0.4rem; width: 100%; box-sizing: border-box; margin: 0.25rem 0; }
+    button { margin-top: 0.5rem; padding: 0.4rem 1rem; cursor: pointer; }
+    .validity-output { font-size: 0.85rem; color: #333; }
+  </style>
+</head>
+<body>
+
+  <h1>Constraint Validation API</h1>
+
+  <!-- DEMO 1: ValidityState -->
+  <div class="demo">
+    <h2>ValidityState — все флаги</h2>
+    <input
+      type="number"
+      id="demo1-input"
+      min="10"
+      max="100"
+      step="5"
+      value="7"
+    >
+    <button onclick="checkDemo1()">Проверить validity</button>
+    <pre id="demo1-output" class="validity-output"></pre>
+  </div>
+
+  <!-- DEMO 2: pattern -->
+  <div class="demo">
+    <h2>pattern — RegEx без /^ и $/</h2>
+    <!--
+      pattern автоматически добавляет ^ и $ → проверяет всю строку.
+      НЕ добавляй /.../ вокруг — только само выражение.
+    -->
+    <input
+      type="text"
+      id="demo2-input"
+      pattern="[A-Za-z]{3,10}"
+      placeholder="3-10 латинских букв"
+    >
+    <button onclick="checkDemo2()">Проверить</button>
+    <pre id="demo2-output" class="validity-output"></pre>
+  </div>
+
+  <!-- DEMO 3: setCustomValidity -->
+  <div class="demo">
+    <h2>setCustomValidity — кастомные ошибки</h2>
+    <input
+      type="email"
+      id="demo3-input"
+      placeholder="email@example.com"
+    >
+    <button onclick="checkEmailUnique()">Проверить уникальность</button>
+    <button onclick="resetCustom()">Сбросить</button>
+    <pre id="demo3-output" class="validity-output"></pre>
+  </div>
+
+  <!-- DEMO 4: form.checkValidity() vs reportValidity() -->
+  <div class="demo">
+    <h2>checkValidity vs reportValidity</h2>
+    <form id="demo4-form" novalidate>
+      <input type="email" name="email" required placeholder="Email (required)">
+      <input type="text" name="code" pattern="[A-Z]{4}" placeholder="4 заглавных буквы">
+      <div>
+        <button type="button" onclick="silentCheck()">checkValidity (тихо)</button>
+        <button type="button" onclick="loudCheck()">reportValidity (с UI)</button>
+      </div>
+    </form>
+    <pre id="demo4-output" class="validity-output"></pre>
+  </div>
+
+  <script>
+    // DEMO 1
+    function checkDemo1() {
+      const input = document.getElementById('demo1-input');
+      const v = input.validity;
+
+      const output = {
+        value: input.value,
+        valid: v.valid,
+        valueMissing: v.valueMissing,
+        typeMismatch: v.typeMismatch,
+        patternMismatch: v.patternMismatch,
+        tooLong: v.tooLong,
+        tooShort: v.tooShort,
+        rangeOverflow: v.rangeOverflow,   // > max
+        rangeUnderflow: v.rangeUnderflow, // < min
+        stepMismatch: v.stepMismatch,     // не кратно step
+        badInput: v.badInput,             // нельзя конвертировать в число
+        customError: v.customError,
+        validationMessage: input.validationMessage,
+      };
+
+      document.getElementById('demo1-output').textContent =
+        JSON.stringify(output, null, 2);
+    }
+
+    // DEMO 2
+    function checkDemo2() {
+      const input = document.getElementById('demo2-input');
+      const output = {
+        value: input.value,
+        valid: input.validity.valid,
+        patternMismatch: input.validity.patternMismatch,
+        message: input.validationMessage,
+      };
+      document.getElementById('demo2-output').textContent =
+        JSON.stringify(output, null, 2);
+    }
+
+    // DEMO 3
+    const REGISTERED_EMAILS = ['admin@example.com', 'test@example.com'];
+
+    function checkEmailUnique() {
+      const input = document.getElementById('demo3-input');
+
+      // Сначала сбрасываем custom ошибку, чтобы проверить нативную
+      input.setCustomValidity('');
+
+      if (!input.validity.valid) {
+        // Нативная ошибка (например, неверный формат email)
+        document.getElementById('demo3-output').textContent =
+          `Нативная ошибка: ${input.validationMessage}`;
+        return;
+      }
+
+      // Проверяем уникальность
+      if (REGISTERED_EMAILS.includes(input.value)) {
+        input.setCustomValidity('Этот email уже зарегистрирован');
+        input.reportValidity(); // показать нативный UI с нашим сообщением
+        document.getElementById('demo3-output').textContent =
+          `customError: true\nmessage: ${input.validationMessage}`;
+      } else {
+        document.getElementById('demo3-output').textContent =
+          'valid: true — email свободен';
+      }
+    }
+
+    function resetCustom() {
+      const input = document.getElementById('demo3-input');
+      // Пустая строка сбрасывает кастомную ошибку
+      input.setCustomValidity('');
+      document.getElementById('demo3-output').textContent =
+        `customError сброшен: ${input.validity.customError}`;
+    }
+
+    // DEMO 4
+    function silentCheck() {
+      const form = document.getElementById('demo4-form');
+      // checkValidity() — не показывает UI, не фокусирует поля
+      const isValid = form.checkValidity();
+      document.getElementById('demo4-output').textContent =
+        `form.checkValidity() = ${isValid}\n(без визуального фидбека)`;
+    }
+
+    function loudCheck() {
+      const form = document.getElementById('demo4-form');
+      // reportValidity() — показывает нативный тултип, фокусирует первое невалидное поле
+      const isValid = form.reportValidity();
+      document.getElementById('demo4-output').textContent =
+        `form.reportValidity() = ${isValid}\n(с визуальным фидбеком)`;
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Accessible Tabs — roving tabindex pattern</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+
+    [role="tablist"] {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid #ccc;
+    }
+
+    [role="tab"] {
+      padding: 0.5rem 1.5rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+    }
+
+    [role="tab"][aria-selected="true"] {
+      border-bottom-color: #0066cc;
+      font-weight: bold;
+    }
+
+    /* WCAG 2.4.11: видимый focus indicator */
+    [role="tab"]:focus-visible {
+      outline: 3px solid #0066cc;
+      outline-offset: 2px;
+    }
+
+    [role="tabpanel"] {
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-top: none;
+    }
+
+    [role="tabpanel"][hidden] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Tab Panel — доступная реализация</h1>
+
+  <!--
+    WAI-ARIA Tabs Pattern:
+    https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
+
+    Keyboard interaction:
+    - Tab: фокус на активную вкладку → затем в panel
+    - Arrow Left/Right: переключение между вкладками
+    - Arrow Up/Down: (опционально) аналогично Left/Right
+    - Home: первая вкладка
+    - End: последняя вкладка
+    - Enter/Space: (если automatic activation выключен) активировать вкладку
+  -->
+
+  <div class="tabs">
+    <!--
+      role="tablist" — контейнер для вкладок.
+      aria-label — доступное имя для группы (если нет заголовка).
+    -->
+    <div role="tablist" aria-label="Настройки профиля">
+
+      <!--
+        Активная вкладка: aria-selected="true", tabindex="0"
+        Неактивные: aria-selected="false", tabindex="-1"
+        Это — roving tabindex pattern.
+        Tab переходит только на активную вкладку.
+        Стрелки переключают между вкладками.
+      -->
+      <button
+        role="tab"
+        id="tab-general"
+        aria-selected="true"
+        aria-controls="panel-general"
+        tabindex="0"
+      >
+        Основные
+      </button>
+
+      <button
+        role="tab"
+        id="tab-privacy"
+        aria-selected="false"
+        aria-controls="panel-privacy"
+        tabindex="-1"
+      >
+        Приватность
+      </button>
+
+      <button
+        role="tab"
+        id="tab-notifications"
+        aria-selected="false"
+        aria-controls="panel-notifications"
+        tabindex="-1"
+      >
+        Уведомления
+      </button>
+    </div>
+
+    <!--
+      role="tabpanel" — контент вкладки.
+      aria-labelledby — связь с кнопкой вкладки.
+      tabindex="0" — чтобы panel была фокусируемой (для Tab после вкладки).
+    -->
+    <div
+      role="tabpanel"
+      id="panel-general"
+      aria-labelledby="tab-general"
+      tabindex="0"
+    >
+      <h2>Основные настройки</h2>
+      <label>
+        Имя пользователя
+        <input type="text" value="Ivan Petrov">
+      </label>
+    </div>
+
+    <div
+      role="tabpanel"
+      id="panel-privacy"
+      aria-labelledby="tab-privacy"
+      tabindex="0"
+      hidden
+    >
+      <h2>Настройки приватности</h2>
+      <label>
+        <input type="checkbox"> Скрыть профиль от поиска
+      </label>
+    </div>
+
+    <div
+      role="tabpanel"
+      id="panel-notifications"
+      aria-labelledby="tab-notifications"
+      tabindex="0"
+      hidden
+    >
+      <h2>Настройки уведомлений</h2>
+      <label>
+        <input type="checkbox" checked> Email уведомления
+      </label>
+    </div>
+  </div>
+
+  <script>
+    class AccessibleTabs {
+      constructor(container) {
+        this.container = container;
+        this.tabs = [...container.querySelectorAll('[role="tab"]')];
+        this.panels = [...container.querySelectorAll('[role="tabpanel"]')];
+
+        this.tabs.forEach(tab => {
+          tab.addEventListener('click', () => this.activate(tab));
+          tab.addEventListener('keydown', (e) => this.handleKeydown(e));
+        });
+      }
+
+      activate(tab) {
+        const panelId = tab.getAttribute('aria-controls');
+        const panel = document.getElementById(panelId);
+
+        // Деактивировать все
+        this.tabs.forEach(t => {
+          t.setAttribute('aria-selected', 'false');
+          t.tabIndex = -1;
+        });
+        this.panels.forEach(p => p.hidden = true);
+
+        // Активировать выбранную
+        tab.setAttribute('aria-selected', 'true');
+        tab.tabIndex = 0;
+        panel.hidden = false;
+      }
+
+      handleKeydown(event) {
+        const currentIndex = this.tabs.indexOf(document.activeElement);
+        let nextIndex;
+
+        switch (event.key) {
+          case 'ArrowRight':
+          case 'ArrowDown':
+            event.preventDefault();
+            // Circular navigation
+            nextIndex = (currentIndex + 1) % this.tabs.length;
+            break;
+          case 'ArrowLeft':
+          case 'ArrowUp':
+            event.preventDefault();
+            nextIndex = (currentIndex - 1 + this.tabs.length) % this.tabs.length;
+            break;
+          case 'Home':
+            event.preventDefault();
+            nextIndex = 0;
+            break;
+          case 'End':
+            event.preventDefault();
+            nextIndex = this.tabs.length - 1;
+            break;
+          default:
+            return;
+        }
+
+        const nextTab = this.tabs[nextIndex];
+        nextTab.focus();
+
+        /*
+          Automatic activation (по умолчанию в большинстве реализаций):
+          вкладка активируется сразу при перемещении стрелками.
+
+          Manual activation: вкладка активируется только по Enter/Space.
+          Полезно если переключение вкладки — дорогая операция (запрос к API).
+        */
+        this.activate(nextTab); // automatic activation
+      }
+    }
+
+    const tabsContainer = document.querySelector('.tabs');
+    new AccessibleTabs(tabsContainer);
+  </script>
+
+</body>
+</html>

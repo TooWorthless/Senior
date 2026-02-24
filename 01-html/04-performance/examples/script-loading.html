@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Script loading: async vs defer vs module</title>
+</head>
+<body>
+
+  <h1>Порядок выполнения скриптов</h1>
+
+  <!--
+    Откройте DevTools → Console, чтобы увидеть порядок выполнения.
+
+    ОЖИДАЕМЫЙ ПОРЯДОК:
+    1. "inline in head" — выполняется немедленно при парсинге
+    2. "async" может выполниться в любой момент (зависит от скорости загрузки)
+    3. "DOMContentLoaded" — после парсинга DOM
+    4. "defer-1" → "defer-2" — строго по порядку, до DOMContentLoaded
+    5. "module" — как defer
+    6. "load" — после всех ресурсов
+
+    В реальности async может выполниться раньше defer если загрузится быстро.
+  -->
+
+  <!--
+    Обычный скрипт в head — БЛОКИРУЕТ парсинг.
+    Браузер остановится, загрузит, выполнит, потом продолжит HTML.
+    Используется редко (только для критических inline скриптов).
+  -->
+  <script>
+    console.log('1. inline в head — выполняется при парсинге');
+    console.log('   document.body:', document.body); // null! Body ещё не распарсен
+  </script>
+
+  <!--
+    defer: загружается параллельно, выполняется ПОСЛЕ парсинга DOM.
+    Гарантирует порядок (defer-1 всегда раньше defer-2).
+    Работает только с src (inline defer игнорируется).
+  -->
+  <script>
+    // Имитируем defer-1 (в реальном примере был бы src)
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('4. defer-1 — после парсинга, до DOMContentLoaded');
+    });
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('5. defer-2 — гарантированно после defer-1');
+    });
+  </script>
+
+  <!--
+    async: загружается параллельно, выполняется КАК ТОЛЬКО загрузится.
+    Порядок НЕ гарантирован.
+    Прерывает парсинг HTML на время выполнения.
+    Лучше для независимых скриптов (аналитика, реклама, A/B тесты).
+  -->
+  <script>
+    // Имитируем async поведение через setTimeout(0)
+    setTimeout(() => {
+      console.log('3. async — когда загрузился (порядок не гарантирован)');
+      console.log('   document.body:', document.body); // уже есть или нет — зависит от момента
+    }, 0);
+  </script>
+
+  <!--
+    type="module":
+    - Ведёт себя как defer по умолчанию
+    - Изолированный scope (нет утечки в глобальный)
+    - 'use strict' автоматически
+    - CORS для cross-origin src
+    - Поддерживает import/export
+  -->
+  <script type="module">
+    // Этот код выполнится как defer — после парсинга
+    console.log('6. module — как defer, но изолированный scope');
+    console.log('   this === undefined в module scope:', typeof this === 'undefined');
+
+    // import работает только в module
+    // import { something } from './utils.js';
+  </script>
+
+  <script>
+    // DOMContentLoaded: DOM готов, external resources могут не загрузиться
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('--- DOMContentLoaded ---');
+      console.log('   DOM полностью распарсен');
+    });
+
+    // load: все ресурсы (images, stylesheets, iframes) загружены
+    window.addEventListener('load', () => {
+      console.log('--- load ---');
+      console.log('   Все ресурсы загружены');
+    });
+  </script>
+
+  <!-- Контент страницы — парсится параллельно с загрузкой defer/async скриптов -->
+  <p>Этот текст уже в DOM когда выполняются defer и module скрипты.</p>
+
+  <!--
+    ПРАКТИЧЕСКИЕ РЕКОМЕНДАЦИИ:
+
+    В <head>:
+    - defer: основной JS (зависит от DOM или других скриптов)
+    - async: независимые скрипты (аналитика, A/B, рекламные теги)
+    - type="module": современные ES-модули
+    - Inline: только критический код (установка тем, anti-FOUC)
+
+    В конце <body>:
+    - Устаревший паттерн для legacy кода без defer
+    - В современных проектах не нужен если используешь defer
+
+    НИКОГДА:
+    - Обычный <script src="..."> в <head> без async/defer
+      (блокирует парсинг — ломает FCP, LCP, TBT)
+  -->
+
+</body>
+</html>

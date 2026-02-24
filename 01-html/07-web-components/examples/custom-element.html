@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Custom Element — полный пример</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+
+    /* CSS Custom Properties для кастомизации компонента снаружи */
+    my-alert {
+      --alert-bg: #fff3cd;
+      --alert-border: #ffc107;
+      --alert-color: #856404;
+      display: block;
+      margin: 1rem 0;
+    }
+
+    my-alert[type="error"] {
+      --alert-bg: #f8d7da;
+      --alert-border: #dc3545;
+      --alert-color: #721c24;
+    }
+
+    my-alert[type="success"] {
+      --alert-bg: #d4edda;
+      --alert-border: #28a745;
+      --alert-color: #155724;
+    }
+
+    /* ::part() — стилизация явно экспонированных частей */
+    my-alert::part(close-button) {
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Custom Element: &lt;my-alert&gt;</h1>
+
+  <!-- Использование компонента -->
+  <my-alert type="warning" dismissible>
+    <strong>Внимание!</strong> Это предупреждение.
+  </my-alert>
+
+  <my-alert type="error">
+    Произошла ошибка подключения.
+  </my-alert>
+
+  <my-alert type="success" dismissible>
+    Данные успешно сохранены.
+  </my-alert>
+
+  <my-alert>
+    Обычное уведомление без type.
+  </my-alert>
+
+  <script>
+    class MyAlert extends HTMLElement {
+      /*
+        observedAttributes: только перечисленные атрибуты
+        вызовут attributeChangedCallback.
+        Наблюдение за всеми атрибутами — антипаттерн (производительность).
+      */
+      static get observedAttributes() {
+        return ['type', 'dismissible', 'hidden'];
+      }
+
+      constructor() {
+        super(); // ОБЯЗАТЕЛЬНО первым вызовом
+
+        /*
+          attachShadow в constructor — корректно.
+          НЕ обращаться к атрибутам и детям здесь.
+          Они ещё не распарсены.
+        */
+        this._shadow = this.attachShadow({ mode: 'open' });
+        this._handleClose = this._handleClose.bind(this);
+      }
+
+      connectedCallback() {
+        /*
+          connectedCallback может вызываться несколько раз
+          (если элемент перемещается в DOM).
+          Проверяем что уже рендерили.
+        */
+        this._render();
+        this._addListeners();
+      }
+
+      disconnectedCallback() {
+        // Очищаем listeners
+        this._removeListeners();
+      }
+
+      attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue === newValue) return;
+        // Перерендериваем при изменении атрибутов
+        if (this.isConnected) {
+          this._render();
+        }
+      }
+
+      // Публичный API
+      dismiss() {
+        this.setAttribute('hidden', '');
+        this.dispatchEvent(new CustomEvent('my-dismiss', {
+          bubbles: true,
+          composed: true, // проходит через shadow boundary
+        }));
+      }
+
+      _render() {
+        const type = this.getAttribute('type') || 'info';
+        const dismissible = this.hasAttribute('dismissible');
+
+        this._shadow.innerHTML = `
+          <style>
+            :host {
+              display: block;
+              border: 1px solid var(--alert-border, #ccc);
+              border-left: 4px solid var(--alert-border, #ccc);
+              background: var(--alert-bg, #f8f9fa);
+              color: var(--alert-color, #333);
+              padding: 0.75rem 1rem;
+              border-radius: 4px;
+              position: relative;
+            }
+
+            :host([hidden]) {
+              display: none;
+            }
+
+            /* ::slotted: стили для контента переданного через slot */
+            ::slotted(strong) {
+              font-weight: 700;
+            }
+
+            .content {
+              padding-right: ${dismissible ? '2rem' : '0'};
+            }
+
+            .close {
+              position: absolute;
+              top: 0.5rem;
+              right: 0.75rem;
+              background: none;
+              border: none;
+              cursor: pointer;
+              color: inherit;
+              opacity: 0.7;
+              padding: 0.25rem;
+            }
+
+            .close:hover { opacity: 1; }
+
+            /* :focus-visible — только при клавиатурной навигации */
+            .close:focus-visible {
+              outline: 2px solid currentColor;
+              outline-offset: 2px;
+              border-radius: 2px;
+            }
+          </style>
+
+          <div class="content" role="alert" aria-live="polite">
+            <slot></slot>
+          </div>
+
+          ${dismissible ? `
+            <button
+              class="close"
+              part="close-button"
+              aria-label="Закрыть уведомление"
+              type="button"
+            >
+              ×
+            </button>
+          ` : ''}
+        `;
+      }
+
+      _addListeners() {
+        const btn = this._shadow.querySelector('.close');
+        if (btn) {
+          btn.addEventListener('click', this._handleClose);
+        }
+      }
+
+      _removeListeners() {
+        const btn = this._shadow.querySelector('.close');
+        if (btn) {
+          btn.removeEventListener('click', this._handleClose);
+        }
+      }
+
+      _handleClose() {
+        this.dismiss();
+      }
+    }
+
+    customElements.define('my-alert', MyAlert);
+
+    // Слушаем кастомное событие
+    document.addEventListener('my-dismiss', (e) => {
+      console.log('Alert dismissed:', e.target);
+    });
+  </script>
+
+</body>
+</html>

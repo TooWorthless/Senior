@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HTML Security Checklist</title>
+
+  <!--
+    CSP через meta — ограниченный, но лучше чем ничего.
+    Для production: используй HTTP заголовок Content-Security-Policy.
+    meta не поддерживает: frame-ancestors, report-uri.
+  -->
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      frame-src 'none';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self'
+    "
+  >
+
+  <!--
+    Referrer Policy для всей страницы.
+    Можно переопределить на конкретных элементах.
+  -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 800px; }
+    .demo { border: 1px solid #ccc; padding: 1rem; margin: 1.5rem 0; border-radius: 6px; }
+    .demo h2 { margin-top: 0; font-size: 1rem; }
+    .safe { border-left: 4px solid #090; }
+    .unsafe { border-left: 4px solid #c00; }
+    code { background: #f5f5f5; padding: 0.1em 0.3em; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <h1>HTML Security: примеры и антипаттерны</h1>
+
+  <!-- ============================================================
+       1. Ссылки: noopener noreferrer
+       ============================================================ -->
+  <div class="demo safe">
+    <h2>✅ Внешние ссылки: rel="noopener noreferrer"</h2>
+    <a
+      href="https://example.com"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Безопасная внешняя ссылка
+    </a>
+    <p><small>window.opener === null, Referer не отправляется</small></p>
+  </div>
+
+  <div class="demo unsafe">
+    <h2>❌ Уязвимая ссылка (reverse tabnapping)</h2>
+    <!-- В реальном коде НЕ делайте так: -->
+    <p><code>&lt;a href="..." target="_blank"&gt;</code> без rel="noopener"</p>
+    <p><small>Открытая вкладка имеет доступ к window.opener</small></p>
+  </div>
+
+  <!-- ============================================================
+       2. iframe sandbox
+       ============================================================ -->
+  <div class="demo safe">
+    <h2>✅ iframe с sandbox</h2>
+    <iframe
+      src="about:blank"
+      sandbox="allow-scripts"
+      title="Изолированный iframe"
+      width="300"
+      height="100"
+      referrerpolicy="no-referrer"
+    ></iframe>
+    <p><small>sandbox="allow-scripts" — только JS, без form submit, без same-origin</small></p>
+  </div>
+
+  <!-- ============================================================
+       3. Безопасная вставка пользовательских данных
+       ============================================================ -->
+  <div class="demo safe">
+    <h2>✅ Безопасная вставка данных через textContent</h2>
+    <div id="safe-output"></div>
+  </div>
+
+  <div class="demo unsafe">
+    <h2>❌ Опасная вставка через innerHTML (XSS)</h2>
+    <p>Никогда не делайте: <code>element.innerHTML = userInput</code></p>
+    <div id="unsafe-demo"></div>
+  </div>
+
+  <!-- ============================================================
+       4. Форма с CSRF токеном
+       ============================================================ -->
+  <div class="demo safe">
+    <h2>✅ Форма с CSRF защитой</h2>
+    <form action="/api/submit" method="POST">
+      <!-- CSRF токен: серверный, уникальный для сессии -->
+      <input type="hidden" name="_csrf" value="RANDOM_SERVER_TOKEN">
+      <label>
+        Сообщение:
+        <input type="text" name="message" required>
+      </label>
+      <button type="submit">Отправить</button>
+    </form>
+  </div>
+
+  <!-- ============================================================
+       5. Безопасный href
+       ============================================================ -->
+  <div class="demo safe">
+    <h2>✅ Валидация href перед вставкой</h2>
+    <div id="safe-links"></div>
+  </div>
+
+  <!-- ============================================================
+       6. crossorigin для скриптов (stack trace)
+       ============================================================ -->
+  <div class="demo safe">
+    <h2>✅ crossorigin на скриптах для stack trace</h2>
+    <p>
+      <code>&lt;script src="https://cdn.example.com/app.js" crossorigin="anonymous"&gt;</code>
+    </p>
+    <p><small>Без crossorigin: window.onerror получает только "Script error."</small></p>
+  </div>
+
+  <script>
+    // ============================================================
+    // Безопасная vs опасная вставка данных
+    // ============================================================
+
+    // Имитируем пользовательский ввод с XSS попыткой
+    const userInput = '<img src="x" onerror="alert(\'XSS\')">';
+
+    // ✅ textContent: экранирует HTML автоматически
+    const safeOutput = document.getElementById('safe-output');
+    safeOutput.textContent = `Пользователь написал: ${userInput}`;
+    // Отображается как текст: <img src="x" onerror="alert('XSS')">
+
+    // ❌ innerHTML: выполнит onerror
+    // document.getElementById('unsafe-demo').innerHTML = userInput; // опасно!
+    document.getElementById('unsafe-demo').textContent =
+      'В реальном коде здесь был бы XSS. Закомментировано для безопасности.';
+
+    // ============================================================
+    // Безопасная валидация href
+    // ============================================================
+
+    const urls = [
+      'https://example.com/page',
+      'http://example.com/page',
+      'mailto:user@example.com',
+      'javascript:alert(1)',    // должен быть отклонён
+      'data:text/html,<h1>',   // должен быть отклонён
+      'vbscript:msgbox(1)',     // должен быть отклонён
+      '/relative/path',         // разрешить относительные
+    ];
+
+    const ALLOWED_PROTOCOLS = new Set(['http:', 'https:', 'mailto:']);
+
+    function safeHref(url) {
+      // Относительные URL безопасны
+      if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../')) {
+        return url;
+      }
+
+      try {
+        const parsed = new URL(url);
+        return ALLOWED_PROTOCOLS.has(parsed.protocol) ? url : null;
+      } catch {
+        return null;
+      }
+    }
+
+    const linksContainer = document.getElementById('safe-links');
+    urls.forEach(url => {
+      const safe = safeHref(url);
+      const p = document.createElement('p');
+
+      if (safe) {
+        const a = document.createElement('a');
+        a.href = safe;
+        a.textContent = url;
+        a.rel = 'noopener noreferrer';
+        p.appendChild(document.createTextNode('✅ '));
+        p.appendChild(a);
+      } else {
+        p.textContent = `❌ Отклонён: ${url}`;
+        p.style.color = '#c00';
+      }
+
+      linksContainer.appendChild(p);
+    });
+  </script>
+
+</body>
+</html>
