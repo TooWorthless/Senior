@@ -23,7 +23,7 @@
 | # | Модуль | Ключевые темы | Статус |
 |---|--------|---------------|--------|
 | 06 | [React](./06-react/README.md) | Fiber, Reconciliation, Hooks, Class Components, Patterns, Performance, RSC | ✅ Готов |
-| 07 | React Native + Expo | Bridge, JSI, новая архитектура, lifecycle, платформенные API | ⏳ Планируется |
+| 07 | [React Native + Expo](./07-react-native/README.md) | Expo Router, Core Components, Styling, Gestures, Reanimated, Storage, New Architecture (JSI/Fabric/TurboModules/Hermes) | ✅ Готов |
 | 08 | Reanimated + Skia | Worklets, shared values, анимации на UI thread, 2D-рендеринг | ⏳ Планируется |
 
 ### Управление состоянием

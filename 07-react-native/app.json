@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "RN Senior Prep",
+    "slug": "rn-senior-prep",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "rn-senior-prep",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0d1117"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.senior.rnprep"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0d1117"
+      },
+      "package": "com.senior.rnprep"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-camera",
+        { "cameraPermission": "Allow RN Prep to access your camera." }
+      ],
+      [
+        "expo-location",
+        { "locationWhenInUsePermission": "Allow RN Prep to access your location." }
+      ],
+      [
+        "expo-notifications",
+        { "icon": "./assets/icon.png", "color": "#3b82f6" }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
