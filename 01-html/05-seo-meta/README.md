@@ -31,6 +31,8 @@
 </head>
 ```
 
+> 💡 **Практика:** живой пример `<head>` с meta и JSON-LD — в [`examples/complete-head.html`](./examples/complete-head.html).
+
 ### `<title>`
 
 - Уникальный для каждой страницы
@@ -112,6 +114,8 @@ OG-теги определяют как страница выглядит при
   <meta property="og:image:alt"    content="Описание изображения">
 </head>
 ```
+
+> 💡 **Практика:** полный `<head>` для статьи с OG и Twitter-тегами см. в [`examples/complete-head.html`](./examples/complete-head.html) и для товара — в [`examples/complete-head-product.html`](./examples/complete-head-product.html).
 
 ### og:type для разных страниц
 

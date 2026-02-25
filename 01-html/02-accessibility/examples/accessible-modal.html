@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Доступное модальное окно (ARIA + focus trap)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 2rem; }
+    button { font: inherit; padding: 0.5rem 1rem; border-radius: 999px; border: none; cursor: pointer; }
+    .btn-primary { background: #2563eb; color: #fff; }
+
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .backdrop[data-open="true"] { display: flex; }
+
+    .modal {
+      background: #0b1120;
+      color: #e5e7eb;
+      max-width: 420px;
+      width: 100%;
+      border-radius: 16px;
+      padding: 1.5rem 1.75rem;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .modal-body {
+      font-size: 0.95rem;
+      color: #cbd5f5;
+      margin-bottom: 1rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #e5e7eb;
+      border: 1px solid #4b5563;
+    }
+  </style>
+</head>
+<body>
+  <h1>Accessible modal demo</h1>
+  <p>Нажми кнопку, чтобы открыть модальное окно. Попробуй пройтись по элементам клавишей <kbd>Tab</kbd>.</p>
+
+  <button id="open-modal" class="btn-primary">
+    Открыть модальное окно
+  </button>
+
+  <div
+    class="backdrop"
+    id="modal-backdrop"
+    role="presentation"
+    data-open="false"
+  >
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      aria-describedby="modal-desc"
+    >
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">Удалить аккаунт?</h2>
+        <button id="close-modal" class="btn-outline" aria-label="Закрыть диалог">
+          ✕
+        </button>
+      </div>
+      <div class="modal-body" id="modal-desc">
+        Это действие нельзя отменить. Все данные будут безвозвратно удалены.
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" id="cancel-btn">Отмена</button>
+        <button class="btn-primary" id="confirm-btn">Удалить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const openBtn   = document.getElementById('open-modal');
+    const backdrop  = document.getElementById('modal-backdrop');
+    const closeBtn  = document.getElementById('close-modal');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const confirmBtn= document.getElementById('confirm-btn');
+
+    const focusableSelectors =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+    let lastFocused: HTMLElement | null = null;
+
+    function openModal() {
+      lastFocused = document.activeElement as HTMLElement | null;
+      backdrop?.setAttribute('data-open', 'true');
+
+      const focusables = backdrop?.querySelectorAll<HTMLElement>(focusableSelectors) ?? [];
+      if (focusables.length) focusables[0].focus();
+
+      document.addEventListener('keydown', onKeyDown);
+    }
+
+    function closeModal() {
+      backdrop?.setAttribute('data-open', 'false');
+      document.removeEventListener('keydown', onKeyDown);
+      if (lastFocused) lastFocused.focus();
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeModal();
+        return;
+      }
+
+      if (e.key === 'Tab' && backdrop?.getAttribute('data-open') === 'true') {
+        const focusables = Array.from(
+          backdrop.querySelectorAll<HTMLElement>(focusableSelectors)
+        );
+        if (!focusables.length) return;
+        const currentIndex = focusables.indexOf(document.activeElement as HTMLElement);
+        let nextIndex = currentIndex;
+
+        if (e.shiftKey) {
+          nextIndex = currentIndex <= 0 ? focusables.length - 1 : currentIndex - 1;
+        } else {
+          nextIndex = currentIndex === focusables.length - 1 ? 0 : currentIndex + 1;
+        }
+
+        focusables[nextIndex].focus();
+        e.preventDefault();
+      }
+    }
+
+    openBtn?.addEventListener('click', openModal);
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    confirmBtn?.addEventListener('click', () => {
+      alert('Аккаунт не будет реально удалён 🙂 Это демо.');
+      closeModal();
+    });
+  </script>
+</body>
+</html>
+

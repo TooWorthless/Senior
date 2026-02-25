@@ -324,6 +324,7 @@ body::after {
 .content-page {
   padding: 40px 52px 80px;
   max-width: 940px;
+  margin-bottom: 160px;
 }
 .content-full {
   padding: 0;
@@ -498,8 +499,6 @@ body::after {
 }
 .markdown-body td:last-child {
   border-right: 0;
-}
-.markdown-body tr {
 }
 
 .markdown-body tr:hover td {

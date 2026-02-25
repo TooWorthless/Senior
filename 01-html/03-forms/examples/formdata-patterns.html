@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>FormData — базовые и продвинутые паттерны</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 1.5rem; }
+    form { display: grid; gap: 0.75rem; max-width: 480px; margin-bottom: 1.5rem; }
+    label { font-size: 0.9rem; font-weight: 500; }
+    input, textarea {
+      font: inherit;
+      padding: 0.4rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+    }
+    button { font: inherit; padding: 0.5rem 1rem; border-radius: 999px; border: none; cursor: pointer; background: #2563eb; color: #fff; }
+    pre {
+      background: #020617;
+      color: #e5e7eb;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      max-width: 640px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>FormData демо</h1>
+  <p>Заполни форму и посмотри, как FormData сериализует данные (включая массивы и файлы).</p>
+
+  <form id="demo-form">
+    <label>
+      Имя:
+      <input name="name" required>
+    </label>
+    <label>
+      Теги (через запятую):
+      <input name="tags" placeholder="frontend, senior, html">
+    </label>
+    <label>
+      Заметка:
+      <textarea name="note" rows="3"></textarea>
+    </label>
+    <label>
+      Файл (опционально):
+      <input type="file" name="attachment">
+    </label>
+    <button type="submit">Отправить (serialize FormData)</button>
+  </form>
+
+  <pre id="output" aria-live="polite"></pre>
+
+  <script>
+    const form = document.getElementById('demo-form');
+    const out  = document.getElementById('output');
+
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+
+      // Разворачиваем FormData в обычный объект для наглядности
+      const obj: Record<string, unknown> = {};
+      fd.forEach((value, key) => {
+        if (value instanceof File) {
+          obj[key] = value.name ? `File(${value.name}, ${value.size} bytes)` : 'File(<empty>)';
+        } else {
+          if (obj[key]) {
+            // превращаем в массив при дублирующихся ключах
+            const prev = obj[key];
+            obj[key] = Array.isArray(prev) ? [...prev, value] : [prev, value];
+          } else {
+            obj[key] = value;
+          }
+        }
+      });
+
+      out.textContent = JSON.stringify(obj, null, 2);
+    });
+  </script>
+</body>
+</html>
+

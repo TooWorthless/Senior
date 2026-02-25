@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Responsive таблица</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 1.5rem; background: #020617; color: #e5e7eb; }
+    .table-wrapper {
+      max-width: 100%;
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+    }
+    table { border-collapse: collapse; width: 100%; min-width: 520px; background: #020617; }
+    th, td { border: 1px solid #1f2937; padding: 0.5rem 0.75rem; }
+    th { background: #0b1120; text-align: left; }
+    caption { margin-bottom: 0.5rem; font-weight: 600; text-align: left; }
+  </style>
+</head>
+<body>
+  <div class="table-wrapper">
+    <table>
+      <caption>Кросс-браузерная поддержка фич</caption>
+      <thead>
+        <tr>
+          <th scope="col">Фича</th>
+          <th scope="col">Chrome</th>
+          <th scope="col">Firefox</th>
+          <th scope="col">Safari</th>
+          <th scope="col">Edge</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">dialog</th>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <th scope="row">:has()</th>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <th scope="row">WebRTC</th>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Сузь окно — увидишь горизонтальный скролл обёртки, а не всей страницы.</p>
+</body>
+</html>
+

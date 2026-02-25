@@ -34,13 +34,13 @@
     -->
     <img
       alt="Горный пейзаж"
-      src="/images/mountain-800.jpg"
+      src="/examples/image1.png"
       srcset="
-        /images/mountain-400.jpg   400w,
-        /images/mountain-800.jpg   800w,
-        /images/mountain-1200.jpg 1200w,
-        /images/mountain-1600.jpg 1600w,
-        /images/mountain-2400.jpg 2400w
+        /examples/image1.png 400w,
+        /examples/image1.png 800w,
+        /examples/image1.png 1200w,
+        /examples/image1.png 1600w,
+        /examples/image1.png 2400w
       "
       sizes="
         (max-width: 480px)  calc(100vw - 2rem),
@@ -78,18 +78,18 @@
       <source
         type="image/avif"
         srcset="
-          /images/product-400.avif   400w,
-          /images/product-800.avif   800w,
-          /images/product-1200.avif 1200w
+          /examples/image2.png 400w,
+          /examples/image2.png 800w,
+          /examples/image2.png 1200w
         "
         sizes="(max-width: 600px) 100vw, 50vw"
       >
       <source
         type="image/webp"
         srcset="
-          /images/product-400.webp   400w,
-          /images/product-800.webp   800w,
-          /images/product-1200.webp 1200w
+          /examples/image2.png 400w,
+          /examples/image2.png 800w,
+          /examples/image2.png 1200w
         "
         sizes="(max-width: 600px) 100vw, 50vw"
       >
@@ -98,7 +98,7 @@
         <source> эти атрибуты не имеет.
       -->
       <img
-        src="/images/product-800.jpg"
+        src="/examples/image2.png"
         alt="Продукт — кофемашина DeLonghi"
         width="800"
         height="600"
@@ -122,7 +122,7 @@
       <source
         media="(max-width: 767px)"
         type="image/webp"
-        srcset="/images/team-mobile.webp"
+        srcset="/examples/image3.png"
         width="390"
         height="520"
       >
@@ -132,7 +132,7 @@
       <source
         media="(max-width: 1023px)"
         type="image/webp"
-        srcset="/images/team-tablet.webp"
+        srcset="/examples/image3.png"
         width="768"
         height="768"
       >
@@ -141,7 +141,7 @@
         <img> — fallback без media query
       -->
       <img
-        src="/images/team-desktop.jpg"
+        src="/examples/image3.png"
         alt="Команда разработчиков на встрече"
         width="1440"
         height="810"
@@ -166,10 +166,10 @@
       ❌ fetchpriority="low" — НЕЛЬЗЯ
     -->
     <picture>
-      <source type="image/avif" srcset="/images/hero.avif" width="1200" height="630">
-      <source type="image/webp" srcset="/images/hero.webp" width="1200" height="630">
+      <source type="image/avif" srcset="/examples/image5.png" width="1200" height="630">
+      <source type="image/webp" srcset="/examples/image5.png" width="1200" height="630">
       <img
-        src="/images/hero.jpg"
+        src="/examples/image5.png"
         alt="Главный баннер — наши услуги"
         width="1200"
         height="630"
@@ -191,11 +191,11 @@
       sizes НЕ нужен.
     -->
     <img
-      src="/images/avatar-48.png"
+      src="/examples/image4.png"
       srcset="
-        /images/avatar-48.png  1x,
-        /images/avatar-96.png  2x,
-        /images/avatar-144.png 3x
+        /examples/image4.png 1x,
+        /examples/image4.png 2x,
+        /examples/image4.png 3x
       "
       alt="Аватар пользователя Иван"
       width="48"

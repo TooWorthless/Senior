@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>&lt;template&gt; + &lt;slot&gt; demo</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 1.5rem; background: #020617; color: #e5e7eb; }
+    my-card { display: block; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>&lt;template&gt; и &lt;slot&gt; в Custom Element</h1>
+
+  <template id="card-template">
+    <style>
+      .card {
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        background: #0b1120;
+        border: 1px solid #1f2937;
+        box-shadow: 0 12px 40px rgba(15,23,42,0.8);
+      }
+      .card-title { font-weight: 600; margin-bottom: 0.5rem; }
+      .card-footer { margin-top: 0.75rem; font-size: 0.8rem; color: #9ca3af; }
+    </style>
+    <div class="card">
+      <div class="card-title">
+        <slot name="title">Заголовок по умолчанию</slot>
+      </div>
+      <div class="card-body">
+        <slot>Содержимое карточки</slot>
+      </div>
+      <div class="card-footer">
+        <slot name="footer">Футер по умолчанию</slot>
+      </div>
+    </div>
+  </template>
+
+  <my-card>
+    <span slot="title">Карта 1</span>
+    Это тело карточки №1.
+    <span slot="footer">Футер 1</span>
+  </my-card>
+
+  <my-card>
+    <span slot="title">Карта 2 без футера</span>
+    У этой карточки нет собственного футера — отрендерится fallback из шаблона.
+  </my-card>
+
+  <script>
+    const tpl = document.getElementById('card-template') as HTMLTemplateElement | null;
+
+    class MyCard extends HTMLElement {
+      constructor() {
+        super();
+        const shadow = this.attachShadow({ mode: 'open' });
+        if (tpl?.content) {
+          shadow.appendChild(tpl.content.cloneNode(true));
+        }
+      }
+    }
+
+    customElements.define('my-card', MyCard);
+  </script>
+</body>
+</html>
+

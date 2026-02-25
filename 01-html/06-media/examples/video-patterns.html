@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Видео паттерны: фон, постер, субтитры</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 1.5rem; background: #020617; color: #e5e7eb; }
+    h1 { margin-bottom: 1rem; }
+    section { margin-bottom: 2rem; }
+    video { max-width: 100%; border-radius: 12px; box-shadow: 0 12px 40px rgba(15,23,42,0.8); }
+    .note { font-size: 0.85rem; color: #9ca3af; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Видео паттерны</h1>
+
+  <section>
+    <h2>Базовый плеер с постером</h2>
+    <video controls poster="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm">
+      <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm" type="video/webm">
+      <p>Ваш браузер не поддерживает тег video.</p>
+    </video>
+    <p class="note">В реальном проекте используй свои статики / CDN. Здесь ссылка на публичный демо-ролик MDN.</p>
+  </section>
+
+  <section>
+    <h2>Автовоспроизводимое бесконечное фоновое видео (muted + loop)</h2>
+    <video autoplay muted loop playsinline>
+      <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm" type="video/webm">
+    </video>
+    <p class="note">Важно: для автоплея на мобильных нужно <code>muted</code> + <code>playsinline</code>.</p>
+  </section>
+</body>
+</html>
+

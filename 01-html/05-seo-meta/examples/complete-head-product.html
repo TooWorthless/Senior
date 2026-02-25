@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>SEO head для товара</title>
+
+  <!-- Базовые метаданные -->
+  <meta name="description" content="Курс по продвинутому HTML для Senior Frontend разработчиков.">
+  <link rel="canonical" href="https://example.com/courses/senior-html">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="product">
+  <meta property="og:title" content="Курс &laquo;Senior HTML Patterns&raquo;">
+  <meta property="og:description" content="Edge cases, a11y, performance, безопасность. Всё, что спрашивают на собесах.">
+  <meta property="og:url" content="https://example.com/courses/senior-html">
+  <meta property="og:image" content="https://example.com/images/senior-html-cover.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Курс &laquo;Senior HTML Patterns&raquo;">
+  <meta name="twitter:description" content="Подготовься к Senior собеседованию по HTML.">
+
+  <!-- JSON-LD Product -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Senior HTML Patterns",
+    "description": "Продвинутый курс по HTML для Senior / Staff Frontend разработчиков.",
+    "image": "https://example.com/images/senior-html-cover.png",
+    "sku": "HTML-SENIOR-001",
+    "offers": {
+      "@type": "Offer",
+      "price": "199",
+      "priceCurrency": "USD",
+      "url": "https://example.com/courses/senior-html",
+      "availability": "https://schema.org/InStock"
+    }
+  }
+  </script>
+</head>
+<body>
+  <h1>Пример &lt;head&gt; для страницы товара</h1>
+  <p>Открой DevTools → Elements → &lt;head&gt;, чтобы посмотреть все метаданные и JSON-LD.</p>
+</body>
+</html>
+

@@ -114,9 +114,22 @@ function toggleBlock(preEl: HTMLPreElement, btn: HTMLButtonElement, wrapper: HTM
     iframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
     iframe.style.cssText = "width:100%;min-height:240px;border:none;display:block;background:#fff;";
     output.appendChild(iframe);
-    iframe.srcdoc = lang === "css"
-      ? `<!DOCTYPE html><html><head><style>body{font-family:sans-serif;padding:16px;}</style><style>${code}</style></head><body></body></html>`
-      : code;
+
+    if (lang === "css") {
+      iframe.srcdoc = `<!DOCTYPE html><html><head><style>body{font-family:sans-serif;padding:16px;}</style><style>${code}</style></head><body></body></html>`;
+    } else {
+      // HTML: добавляем base href="/examples/" чтобы относительные пути
+      // image1.png .. image5.png резолвились на /examples/image*.png
+      let html = code;
+      if (html.includes("<head>")) {
+        html = html.replace("<head>", '<head><base href="/examples/">');
+      } else if (html.includes("<html")) {
+        html = html.replace("<html", '<html><head><base href="/examples/"></head>');
+      } else {
+        html = `<!DOCTYPE html><html><head><base href="/examples/"></head><body>${html}</body></html>`;
+      }
+      iframe.srcdoc = html;
+    }
     return;
   }
 

@@ -155,9 +155,18 @@ export default function CodeConsole({ initialCode, filename, extension }: Props)
     if (mode === "preview" || (mode === "html" && (extension === "html" || extension === "css"))) {
       // HTML / CSS preview
       let src = code;
-      // Если это CSS файл — оборачиваем в HTML страницу
       if (extension === "css") {
-        src = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${code}</style></head><body><div class="demo">CSS Preview — добавь HTML в редакторе</div></body></html>`;
+        src = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:sans-serif;padding:16px;}</style><style>${code}</style></head><body><div class="demo">CSS Preview — добавь HTML в редакторе</div></body></html>`;
+      } else if (extension === "html") {
+        // Добавляем base href="/examples/" чтобы относительные пути к image1.png..image5.png
+        // и другим ассетам из /public/examples работали при preview.
+        if (src.includes("<head>")) {
+          src = src.replace("<head>", '<head><base href="/examples/">');
+        } else if (src.includes("<html")) {
+          src = src.replace("<html", '<html><head><base href="/examples/"></head>');
+        } else {
+          src = `<!DOCTYPE html><html><head><base href="/examples/"></head><body>${src}</body></html>`;
+        }
       }
       setPreviewSrc(src);
       setMode("preview");

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>iframe sandbox demo</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 1.5rem; background: #020617; color: #e5e7eb; }
+    iframe { width: 100%; max-width: 520px; height: 160px; border-radius: 12px; border: 1px solid #1f2937; background: #020617; }
+    code { background: #0b1120; padding: 2px 4px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>iframe sandbox</h1>
+  <p>Этот iframe не может открывать новые окна и выполнять скрипты изнутри.</p>
+  <p>Проверь <code>sandbox=&quot;allow-same-origin&quot;</code> / без него в DevTools.</p>
+
+  <iframe
+    srcdoc="&lt;p&gt;Я внутри sandbox-iframe&lt;/p&gt;&lt;script&gt;alert('Этот alert не сработает')&lt;/script&gt;"
+    sandbox="allow-same-origin"
+  ></iframe>
+</body>
+</html>
+

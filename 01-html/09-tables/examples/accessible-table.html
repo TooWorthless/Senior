@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Доступная таблица</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 1.5rem; background: #020617; color: #e5e7eb; }
+    table { border-collapse: collapse; width: 100%; max-width: 680px; background: #020617; }
+    th, td { border: 1px solid #1f2937; padding: 0.5rem 0.75rem; }
+    th { background: #0b1120; text-align: left; }
+    caption { margin-bottom: 0.5rem; font-weight: 600; text-align: left; }
+  </style>
+</head>
+<body>
+  <table>
+    <caption>Расписание митапов по фронтенду</caption>
+    <thead>
+      <tr>
+        <th scope="col">Дата</th>
+        <th scope="col">Тема</th>
+        <th scope="col">Уровень</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">12.03</th>
+        <td>HTML a11y patterns</td>
+        <td>Senior</td>
+      </tr>
+      <tr>
+        <th scope="row">19.03</th>
+        <td>React concurrent features</td>
+        <td>Senior</td>
+      </tr>
+      <tr>
+        <th scope="row">26.03</th>
+        <td>WebSockets &amp; WebRTC</td>
+        <td>Middle+</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
+

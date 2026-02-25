@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>&lt;bdi&gt; для пользовательского контента</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 1.5rem; }
+    li { margin-bottom: 0.35rem; }
+  </style>
+</head>
+<body>
+  <h1>&lt;bdi&gt; и смешанные направления текста</h1>
+  <p>Сравни, как отображаются имена пользователей без и с &lt;bdi&gt;:</p>
+
+  <ul>
+    <li>Без &lt;bdi&gt;:   <span>@محمد</span>: присоединился</li>
+    <li>С &lt;bdi&gt;:    <bdi>@محمد</bdi>: присоединился</li>
+  </ul>
+
+  <p>Второй вариант не ломает порядок знаков пунктуации в RTL / LTR миксе.</p>
+</body>
+</html>
+
