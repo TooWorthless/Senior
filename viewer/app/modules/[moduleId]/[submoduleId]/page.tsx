@@ -1,18 +1,23 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getModuleInfo, getSubmoduleInfo, readReadme, readExampleFile } from "@/lib/modules";
+import {
+  getModuleInfo,
+  getSubmoduleInfo,
+  readReadme,
+  readExampleFile,
+} from "@/lib/modules";
 import { renderMarkdown } from "@/lib/markdown";
 import MarkdownBody from "@/components/MarkdownBody";
 import CodeConsole from "@/components/CodeConsole";
 
 interface Props {
-  params:       Promise<{ moduleId: string; submoduleId: string }>;
+  params: Promise<{ moduleId: string; submoduleId: string }>;
   searchParams: Promise<{ file?: string }>;
 }
 
 export default async function SubmodulePage({ params, searchParams }: Props) {
   const { moduleId, submoduleId } = await params;
-  const { file }                  = await searchParams;
+  const { file } = await searchParams;
 
   const [mod, sub] = await Promise.all([
     getModuleInfo(moduleId),
@@ -26,7 +31,7 @@ export default async function SubmodulePage({ params, searchParams }: Props) {
     <div className="tabs-bar">
       {/* README tab */}
       <Link
-        href={`/${moduleId}/${submoduleId}`}
+        href={`/modules/${moduleId}/${submoduleId}`}
         className={`tab-btn ${!file ? "active" : ""}`}
       >
         📄 README
@@ -36,12 +41,14 @@ export default async function SubmodulePage({ params, searchParams }: Props) {
       {sub.examples.map((ex) => (
         <Link
           key={ex.name}
-          href={`/${moduleId}/${submoduleId}?file=${encodeURIComponent(ex.name)}`}
+          href={`/modules/${moduleId}/${submoduleId}?file=${encodeURIComponent(ex.name)}`}
           className={`tab-btn ${file === ex.name ? "active" : ""}`}
         >
           <span className={`tab-dot ${ex.extension}`} />
           {ex.label}
-          <span style={{ fontSize: 10, color: "#8b949e" }}>.{ex.extension}</span>
+          <span style={{ fontSize: 10, color: "#8b949e" }}>
+            .{ex.extension}
+          </span>
         </Link>
       ))}
     </div>
@@ -55,21 +62,44 @@ export default async function SubmodulePage({ params, searchParams }: Props) {
     const ext = file.split(".").pop() ?? "js";
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      <div
+        style={{ display: "flex", flexDirection: "column", height: "100vh" }}
+      >
         {/* Mini breadcrumb */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          padding: "8px 16px", background: "#161b22",
-          borderBottom: "1px solid #30363d", fontSize: 12, color: "#8b949e",
-          flexShrink: 0,
-        }}>
-          <Link href="/" style={{ color: "#8b949e", textDecoration: "none" }}>Главная</Link>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "8px 16px",
+            background: "#161b22",
+            borderBottom: "1px solid #30363d",
+            fontSize: 12,
+            color: "#8b949e",
+            flexShrink: 0,
+          }}
+        >
+          <Link href="/" style={{ color: "#8b949e", textDecoration: "none" }}>
+            Главная
+          </Link>
           <span>/</span>
-          <Link href={`/${moduleId}`} style={{ color: "#8b949e", textDecoration: "none" }}>{mod.title}</Link>
+          <Link
+            href={`/modules/${moduleId}`}
+            style={{ color: "#8b949e", textDecoration: "none" }}
+          >
+            {mod.title}
+          </Link>
           <span>/</span>
-          <Link href={`/${moduleId}/${submoduleId}`} style={{ color: "#8b949e", textDecoration: "none" }}>{sub.title}</Link>
+          <Link
+            href={`/modules/${moduleId}/${submoduleId}`}
+            style={{ color: "#8b949e", textDecoration: "none" }}
+          >
+            {sub.title}
+          </Link>
           <span>/</span>
-          <span style={{ color: "#c9d1d9", fontFamily: "monospace" }}>{file}</span>
+          <span style={{ color: "#c9d1d9", fontFamily: "monospace" }}>
+            {file}
+          </span>
         </div>
 
         <TabsBar />
@@ -99,37 +129,61 @@ export default async function SubmodulePage({ params, searchParams }: Props) {
           <nav className="breadcrumb">
             <Link href="/">Главная</Link>
             <span className="sep">/</span>
-            <Link href={`/${moduleId}`}>{mod.icon} {mod.title}</Link>
+            <Link href={`/modules/${moduleId}`}>
+              {mod.icon} {mod.title}
+            </Link>
             <span className="sep">/</span>
             <span className="current">{sub.title}</span>
           </nav>
 
           {/* Quick-access examples */}
           {sub.examples.length > 0 && (
-            <div style={{
-              marginBottom: 24, padding: "14px 18px",
-              background: "#161b22", border: "1px solid #30363d", borderRadius: 10,
-              borderLeft: "3px solid #3fb950",
-            }}>
-              <div style={{ fontSize: 11, color: "#8b949e", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            <div
+              style={{
+                marginBottom: 24,
+                padding: "14px 18px",
+                background: "#161b22",
+                border: "1px solid #30363d",
+                borderRadius: 10,
+                borderLeft: "3px solid #3fb950",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#8b949e",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  marginBottom: 10,
+                }}
+              >
                 ▶ Примеры кода ({sub.examples.length})
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {sub.examples.map((ex) => (
                   <Link
                     key={ex.name}
-                    href={`/${moduleId}/${submoduleId}?file=${encodeURIComponent(ex.name)}`}
+                    href={`/modules/${moduleId}/${submoduleId}?file=${encodeURIComponent(ex.name)}`}
                     style={{
-                      display: "inline-flex", alignItems: "center", gap: 6,
-                      padding: "5px 11px", borderRadius: 6,
-                      background: "#1c2128", border: "1px solid #30363d",
-                      color: "#c9d1d9", fontSize: 12, textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "5px 11px",
+                      borderRadius: 6,
+                      background: "#1c2128",
+                      border: "1px solid #30363d",
+                      color: "#c9d1d9",
+                      fontSize: 12,
+                      textDecoration: "none",
                       fontFamily: "monospace",
                     }}
                   >
                     <span className={`tab-dot ${ex.extension}`} />
                     {ex.label}
-                    <span style={{ fontSize: 10, color: "#8b949e" }}>.{ex.extension}</span>
+                    <span style={{ fontSize: 10, color: "#8b949e" }}>
+                      .{ex.extension}
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -140,7 +194,9 @@ export default async function SubmodulePage({ params, searchParams }: Props) {
           {readme ? (
             <MarkdownBody html={renderMarkdown(readme)} />
           ) : (
-            <div style={{ color: "#8b949e", fontSize: 13 }}>README не найден.</div>
+            <div style={{ color: "#8b949e", fontSize: 13 }}>
+              README не найден.
+            </div>
           )}
         </div>
       </div>

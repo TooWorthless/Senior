@@ -87,6 +87,14 @@ body::after {
   padding: 12px 12px 12px 0;
 }
 
+.sidebar-header-controls {
+  display: flex;
+  /* justify-content: center; */
+  gap: 8px;
+  padding: 16px;
+  padding-top: 0;
+}
+
 /* Ambient glow using theme token */
 .app-sidebar::after {
   content: "";
@@ -138,6 +146,11 @@ body::after {
   align-items: center;
   justify-content: space-between;
   gap: 4px;
+}
+
+.sidebar-header-container {
+  display: flex;
+  flex-direction: column;
   border-bottom: 1px solid var(--border);
 }
 
@@ -1318,6 +1331,207 @@ p .dead-link {
   font-size: 14px;
 }
 
+/* ── Profile page ───────────────────────────────────────────────────────── */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.profile-avatar-lg {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 16px;
+  background: radial-gradient(
+    circle at 30% 0,
+    var(--accent-light),
+    var(--accent-2)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  box-shadow:
+    0 0 18px var(--accent-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.profile-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.profile-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr);
+  gap: 16px;
+}
+
+@media (max-width: 720px) {
+  .profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.profile-card {
+  padding: 18px 20px;
+  background: var(--bg-card);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+.profile-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.profile-list {
+  display: grid;
+  gap: 6px;
+}
+
+.profile-list-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.profile-list-row dt {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.profile-list-row dd {
+  margin: 0;
+  text-align: right;
+  color: var(--text-primary);
+}
+
+.profile-mono {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 12px;
+}
+
+.profile-hint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.profile-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.profile-logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--danger-border, #f97373);
+  background: var(--danger-bg, rgba(248, 113, 113, 0.09));
+  color: var(--danger-fg, #fecaca);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    transform 0.05s ease;
+}
+
+.profile-logout-button:hover {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: #fca5a5;
+  transform: translateY(-0.5px);
+}
+
+.profile-logout-button:active {
+  transform: translateY(0.5px);
+}
+
+.profile-pill {
+  display: flex;
+  flex: 1;
+  /* align-items: center; */
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.profile-pill:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  background: var(--bg-card);
+}
+
+.profile-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at 30% 0,
+    var(--accent-light),
+    var(--accent-2)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.profile-name {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-pill-mobile {
+  padding: 6px;
+  margin-left: 12px;
+}
+
+.profile-pill-mobile .profile-name {
+  display: none;
+}
+
 /* ── Theme Switcher ────────────────────────────────────────────────────── */
 .theme-switcher-wrap {
   position: relative;
@@ -1467,15 +1681,23 @@ p .dead-link {
     overflow-y: hidden;
   }
 
+  .profile-header {
+    align-items: flex-start;
+  }
+
+  .theme-option-desc {
+    display: none;
+  }
+
   .mobile-topbar {
     position: sticky;
     top: 0;
     z-index: 50;
-    height: 52px;
+    height: 64px;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 0 14px;
+    padding: 6px 14px;
     background: rgba(172, 172, 204, 0.321);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
@@ -1522,6 +1744,13 @@ p .dead-link {
     letter-spacing: -0.02em;
   }
 
+  .mobile-topbar-theme {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   /* Sidebar becomes off-canvas */
   .app-sidebar {
     position: fixed;
@@ -1566,6 +1795,8 @@ p .dead-link {
   .content-page {
     padding: 22px 16px 64px;
     max-width: 100%;
+    margin-left: 8px;
+    margin-right: 8px;
   }
 
   .module-cards {

@@ -6,13 +6,15 @@ export default async function HomePage() {
 
   const totalExamples = modules.reduce(
     (acc, m) => acc + m.submodules.reduce((a, s) => a + s.examples.length, 0),
-    0
+    0,
   );
-  const totalSubmodules = modules.reduce((acc, m) => acc + m.submodules.length, 0);
+  const totalSubmodules = modules.reduce(
+    (acc, m) => acc + m.submodules.length,
+    0,
+  );
 
   return (
     <div className="content-page">
-
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <div className="hero">
         <div className="hero-label">
@@ -21,7 +23,9 @@ export default async function HomePage() {
         </div>
 
         <h1 className="hero-title">
-          Senior Frontend<br />Interview Prep
+          Senior Frontend
+          <br />
+          Interview Prep
         </h1>
 
         <p className="hero-sub">
@@ -48,9 +52,16 @@ export default async function HomePage() {
       {/* ── Module cards ─────────────────────────────────────────────── */}
       <div className="module-cards">
         {modules.map((mod) => {
-          const exCount = mod.submodules.reduce((a, s) => a + s.examples.length, 0);
+          const exCount = mod.submodules.reduce(
+            (a, s) => a + s.examples.length,
+            0,
+          );
           return (
-            <Link key={mod.id} href={`/${mod.id}`} className="module-card">
+            <Link
+              key={mod.id}
+              href={`/modules/${mod.id}`}
+              className="module-card"
+            >
               <div className="module-card-icon">{mod.icon}</div>
               <div className="module-card-num">{mod.id}</div>
               <div className="module-card-title">{mod.title}</div>
@@ -73,7 +84,10 @@ export default async function HomePage() {
           {[
             ["📖", "Выбери модуль → подмодуль → читай теорию в README"],
             ["▶", "Нажми на файл примера в сайдбаре или вкладку сверху"],
-            ["⌨", "Откроется Monaco Editor с кодом примера — можешь редактировать"],
+            [
+              "⌨",
+              "Откроется Monaco Editor с кодом примера — можешь редактировать",
+            ],
             ["🚀", "Run (⌘↵) — JS запускается в sandbox, вывод справа"],
             ["🌐", "Для HTML/CSS — переключатель Preview показывает рендер"],
             ["↩", "Кнопка Reset восстанавливает оригинальный код файла"],
@@ -85,7 +99,6 @@ export default async function HomePage() {
           ))}
         </div>
       </div>
-
     </div>
   );
 }

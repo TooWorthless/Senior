@@ -21,37 +21,72 @@ export default async function ModulePage({ params }: Props) {
       <nav className="breadcrumb">
         <Link href="/">Главная</Link>
         <span className="sep">/</span>
-        <span className="current">{mod.icon} {mod.title}</span>
+        <span className="current">
+          {mod.icon} {mod.title}
+        </span>
       </nav>
 
       {/* Submodules list */}
-      <div style={{
-        marginBottom: 28, padding: "16px 20px",
-        background: "#161b22", border: "1px solid #30363d", borderRadius: 10,
-      }}>
-        <div style={{ fontSize: 11, color: "#8b949e", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
+      <div
+        style={{
+          marginBottom: 28,
+          padding: "16px 20px",
+          background: "#161b22",
+          border: "1px solid #30363d",
+          borderRadius: 10,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            color: "#8b949e",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            marginBottom: 12,
+          }}
+        >
           Подмодули ({mod.submodules.length})
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {mod.submodules.map((sub) => (
             <Link
               key={sub.id}
-              href={`/${moduleId}/${sub.id}`}
+              href={`/modules/${moduleId}/${sub.id}`}
               style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                padding: "5px 12px", borderRadius: 6,
-                background: "#1c2128", border: "1px solid #30363d",
-                color: "#c9d1d9", fontSize: 12, textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "5px 12px",
+                borderRadius: 6,
+                background: "#1c2128",
+                border: "1px solid #30363d",
+                color: "#c9d1d9",
+                fontSize: 12,
+                textDecoration: "none",
                 transition: "border-color 0.15s",
               }}
             >
-              <span style={{ color: "#8b949e", fontFamily: "monospace", fontSize: 10 }}>{sub.id.split("-")[0]}</span>
+              <span
+                style={{
+                  color: "#8b949e",
+                  fontFamily: "monospace",
+                  fontSize: 10,
+                }}
+              >
+                {sub.id.split("-")[0]}
+              </span>
               <span>{sub.title}</span>
               {sub.examples.length > 0 && (
-                <span style={{
-                  fontSize: 10, padding: "1px 5px", borderRadius: 3,
-                  background: "rgba(63,185,80,0.15)", color: "#3fb950",
-                }}>
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: "1px 5px",
+                    borderRadius: 3,
+                    background: "rgba(63,185,80,0.15)",
+                    color: "#3fb950",
+                  }}
+                >
                   {sub.examples.length}
                 </span>
               )}

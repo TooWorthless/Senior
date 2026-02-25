@@ -58,7 +58,7 @@ export default function AppSidebar({ modules }: Props) {
             >
               <span className="icon">{mod.icon}</span>
               <Link
-                href={`/${mod.id}`}
+                href={`/modules/${mod.id}`}
                 onClick={(e) => e.stopPropagation()}
                 style={{
                   color: isModActive ? "#c9d1d9" : "inherit",
@@ -84,7 +84,7 @@ export default function AppSidebar({ modules }: Props) {
                   <div key={sub.id}>
                     <div style={{ display: "flex", alignItems: "center" }}>
                       <Link
-                        href={`/${mod.id}/${sub.id}`}
+                        href={`/modules/${mod.id}/${sub.id}`}
                         className={`nav-submodule ${isSubActive ? "active" : ""}`}
                         style={{ flex: 1 }}
                       >
@@ -121,7 +121,7 @@ export default function AppSidebar({ modules }: Props) {
                           isModActive &&
                           currentSub === sub.id &&
                           currentFile === ex.name;
-                        const href = `/${mod.id}/${sub.id}?file=${encodeURIComponent(ex.name)}`;
+                        const href = `/modules/${mod.id}/${sub.id}?file=${encodeURIComponent(ex.name)}`;
 
                         return (
                           <Link
